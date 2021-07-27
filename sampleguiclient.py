@@ -8,6 +8,7 @@ This code is in the public domain
 """
 import os, sys, time
 import queue
+import design
 
 import linecache
 
@@ -170,9 +171,60 @@ class SampleGUIClientWindow(QMainWindow):
         timestamp = '[%010.3f]' % time.process_time()
         self.log_widget.append(timestamp + ' ' + str(msg))
 
+# if __name__ == "__main__":
+#     app = QApplication(sys.argv)
+#     mainwindow = SampleGUIClientWindow()
+#     mainwindow.show()
+#     app.exec_()
+
+
+
+class SlaveGui(QMainWindow, design.Ui_MainWindow):
+    def __init__(self):
+        super().__init__()
+
+        self.setupUi(self)
+
+        self.create_client()
+
+        self.ready_button.clicked.connect(self.send_ready)
+
+        self.create_timers()
+
+        self.log("Started")
+
+    def create_timers(self):
+        self.client_reply_timer = QTimer(self)
+        self.client_reply_timer.timeout.connect(self.on_client_reply_timer)
+        self.client_reply_timer.start(100)
+
+    def send_ready(self):
+        self.client.cmd_q.put(ClientCommand(ClientCommand.CONNECT, 1, 7, SERVER_ADDR))
+        self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 1, 7))
+        self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE))
+
+    def on_client_reply_timer(self):
+        try:
+            reply = self.client.reply_q.get(block=False)
+            status = "SUCCESS" if reply.type == ClientReply.SUCCESS else "ERROR"
+            self.log('Client reply %s: %s' % (status, reply.data))
+            print("   reply.type:", reply.type)
+            print("   reply.data:", reply.data)
+            #self.label_name.setText(reply.data.split(",")[0])
+            #self.label_plan.setText(reply.data.split(",")[1])
+        except queue.Empty:
+            pass
+
+    def create_client(self):
+        self.client = SocketClientThread()
+        self.client.start()
+
+    def log(self, msg):
+        timestamp = '[%010.3f]' % time.process_time()
+        self.text_browser.append(timestamp + ' ' + str(msg))
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    mainwindow = SampleGUIClientWindow()
+    mainwindow = SlaveGui()
     mainwindow.show()
     app.exec_()
-

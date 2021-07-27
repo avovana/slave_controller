@@ -21,7 +21,7 @@ class ClientCommand(object):
     """
     CONNECT, SEND, RECEIVE, CLOSE = range(4)
 
-    def __init__(self, type, msg_type, line_number, data=None):
+    def __init__(self, type, msg_type=None, line_number=None, data=None):
         self.type = type
         self.msg_type = msg_type
         self.line_number = line_number
@@ -103,7 +103,7 @@ class SocketClientThread(threading.Thread):
     #  def _handle_SEND_ready(self, cmd):
     def _handle_SEND(self, cmd):
         print("_handle_SEND_ready")
-        print("len(cmd.data): ", len(cmd.data))
+        #print("len(cmd.data): ", len(cmd.data))
         # msg_type = struct.pack('>b', cmd.data[0])
         #msg_type = cmd.data[0]
         print("cmd.msg_type: ", cmd.msg_type)
