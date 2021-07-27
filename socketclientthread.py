@@ -141,24 +141,28 @@ class SocketClientThread(threading.Thread):
             header_data = self._recv_n_bytes(4) # если не коннектев, то исключение
             print("header_data: ", header_data)
             msg_size = int.from_bytes(header_data, byteorder='big', signed=False)
+            print("msg_size: ", msg_size)
 
-            if msg_size >= 4:
-                type_data = self._recv_n_bytes(4)
-                print("type_data: ", type_data)
-                msg_type = int.from_bytes(type_data, byteorder='big', signed=False)
-                print("msg_type: ", msg_type)
+            body_data = self._recv_n_bytes(msg_size)
 
-                if msg_type == 4:
-                    #print("header_data[0:4]", body_data[0:4])
-                    #msg_type = int.from_bytes(body_data[0:4], byteorder='big', signed=False)
+            self.reply_q.put(self._success_reply(body_data))
+            return
 
-                    body_data = self._recv_n_bytes(msg_size - 4)
-                    print("body_data: ", body_data)
-                    body = body_data.decode()
-                    print("body: ", body)
+            # print("type_data: ", type_data)
+            # msg_type = int.from_bytes(type_data, byteorder='big', signed=False)
+            # print("msg_type: ", msg_type)
 
-                    self.reply_q.put(self._success_reply(body))
-                    return
+            # if msg_type == 4:
+            #     #print("header_data[0:4]", body_data[0:4])
+            #     #msg_type = int.from_bytes(body_data[0:4], byteorder='big', signed=False)
+            #
+            #     body_data = self._recv_n_bytes(msg_size - 4)
+            #     print("body_data: ", body_data)
+            #     body = body_data.decode()
+            #     print("body: ", body)
+            #
+            #     self.reply_q.put(self._success_reply(body))
+            #     return
 
             self.reply_q.put(self._error_reply('Socket closed prematurely'))
         except IOError as e:

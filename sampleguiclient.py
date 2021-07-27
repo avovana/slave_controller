@@ -11,6 +11,7 @@ import queue
 import design
 
 import linecache
+import signal
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -162,6 +163,30 @@ class SampleGUIClientWindow(QMainWindow):
             self.log('Client reply %s: %s' % (status, reply.data))
             print("   reply.type:", reply.type)
             print("   reply.data:", reply.data)
+
+            msg_type = int.from_bytes(reply.data[0:4], byteorder='big', signed=False)
+            reply.remove(0, 4)
+            print("msg_type: ", msg_type)
+            print("reply.data: ", reply.data)
+            body = reply.data.decode()
+            print("body: ", body)
+
+            if msg_type == 4:
+                self.name_label.setText(body.split(",")[0])
+                self.plan_label.setText(body.split(",")[1])
+
+            # if msg_type == 4:
+            #     #print("header_data[0:4]", body_data[0:4])
+            #     #msg_type = int.from_bytes(body_data[0:4], byteorder='big', signed=False)
+            #
+            #     body_data = self._recv_n_bytes(msg_size - 4)
+            #     print("body_data: ", body_data)
+            #     body = body_data.decode()
+            #     print("body: ", body)
+            #
+            #     self.reply_q.put(self._success_reply(body))
+            #     return
+
             #self.label_name.setText(reply.data.split(",")[0])
             #self.label_plan.setText(reply.data.split(",")[1])
         except queue.Empty:
@@ -208,10 +233,25 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             reply = self.client.reply_q.get(block=False)
             status = "SUCCESS" if reply.type == ClientReply.SUCCESS else "ERROR"
             self.log('Client reply %s: %s' % (status, reply.data))
-            print("   reply.type:", reply.type)
-            print("   reply.data:", reply.data)
-            #self.label_name.setText(reply.data.split(",")[0])
-            #self.label_plan.setText(reply.data.split(",")[1])
+            # print("   reply.type:", reply.type)
+            # print("   reply.data:", reply.data)
+
+            if reply.data is None:
+                return
+
+            msg_type = int.from_bytes(reply.data[0:4], byteorder='big', signed=False)
+            # print("msg_type: ", msg_type)
+            # print("reply.data: ", reply.data)
+            # print("len(reply.data): ", len(reply.data))
+            # print("reply.data[4:len(reply.data) - 4 - 1]: ", reply.data[4:len(reply.data)])
+            # print("len(reply.data[4:len(reply.data) - 4 - 1]): ", len(reply.data[4:len(reply.data)]))
+            body = reply.data[4:len(reply.data)].decode()
+            # print("body: ", body)
+
+            if msg_type == 4:
+                name, plan = body.split(",")
+                self.name_label.setText(name)
+                self.plan_label.setText(plan)
         except queue.Empty:
             pass
 
