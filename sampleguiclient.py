@@ -24,7 +24,6 @@ from socketclientthread import SocketClientThread, ClientCommand, ClientReply
 SERVER_ADDR = 'localhost', 6000
 #SERVER_ADDR = '192.168.116.1', 6000
 
-
 class CircleWidget(QWidget):
     def __init__(self, parent=None):
         super(CircleWidget, self).__init__(parent)
@@ -214,9 +213,13 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         self.ready_button.clicked.connect(self.send_ready)
 
+        self.scanner_status_checkbox.setEnabled(False)
+
         self.create_timers()
 
         self.log("Started")
+
+        signal.signal(signal.SIGTRAP, self.receiveSignal)
 
     def create_timers(self):
         self.client_reply_timer = QTimer(self)
@@ -263,7 +266,20 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         timestamp = '[%010.3f]' % time.process_time()
         self.text_browser.append(timestamp + ' ' + str(msg))
 
+    def receiveSignal(self, signalNumber, frame):
+        print('Received:', signalNumber)
+        self.scanner_status_checkbox.setChecked(True)
+        self.scanner_status_checkbox.setEnabled(False)
+
+        palette = QPalette()
+        palette.setColor(QPalette.Base, QColor("#23F617"))
+        self.scanner_status_checkbox.setPalette(palette)
+
 if __name__ == "__main__":
+
+
+    print('My PID is:', os.getpid())
+
     app = QApplication(sys.argv)
     mainwindow = SlaveGui()
     mainwindow.show()
