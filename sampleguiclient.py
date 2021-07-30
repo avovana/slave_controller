@@ -131,7 +131,7 @@ class SampleGUIClientWindow(QMainWindow):
     def check_scan_file(self):
         self.log('check_scan_file')
         # self.log('check_scan_file')
-        scan = linecache.getline('/home/avovana/slave_controller/scans.txt', self.scan_number)
+        scan = linecache.getline('/home/avovana/scans.txt', self.scan_number)
         #self.log('Scan number %i: %s' % (self.scan_number, scan))
         if scan and self.is_master_respond:
             self.log('Scan number %i: %s' % (self.scan_number, scan))
@@ -276,11 +276,23 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.scanner_status_checkbox.setPalette(palette)
 
 if __name__ == "__main__":
+    pid = str(os.getpid())
+    print(os.path.expanduser('~'))
 
+    pid_file = os.path.expanduser('~') + '/slave_controller_pid.txt'
 
-    print('My PID is:', os.getpid())
+    print('My PID is:', pid)
+    print('pid_file:', pid_file)
+    with open(pid_file, 'w') as file:
+        file.write(pid)
 
     app = QApplication(sys.argv)
     mainwindow = SlaveGui()
     mainwindow.show()
     app.exec_()
+
+    if os.path.isfile(pid_file):
+        os.remove(pid_file)
+        print("Deleted file %s" % pid_file)
+    else:
+        print("Error: %s file not found" % pid_file)
