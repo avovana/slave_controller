@@ -22,7 +22,7 @@ class SlaveControllerHandler:
         print('scan: ', scan)
 
     def scanner_status(self, status):
-        print('calculate(%i)' % status)
+        print('scanner_status=%i' % status)
         #
         # if work.op == Operation.ADD:
         #     val = work.num1 + work.num2
@@ -47,18 +47,12 @@ class SlaveControllerHandler:
 if __name__ == '__main__':
     handler = SlaveControllerHandler()
     processor = SlaveController.Processor(handler)
-    transport = TSocket.TServerSocket(host='127.0.0.1', port=9090)
+    transport = TSocket.TServerSocket(host='localhost', port=9090)
     tfactory = TTransport.TBufferedTransportFactory()
     pfactory = TBinaryProtocol.TBinaryProtocolFactory()
 
     server = TServer.TSimpleServer(processor, transport, tfactory, pfactory)
 
-    # You could do one of these for a multithreaded server
-    # server = TServer.TThreadedServer(
-    #     processor, transport, tfactory, pfactory)
-    # server = TServer.TThreadPoolServer(
-    #     processor, transport, tfactory, pfactory)
-
-    print('Starting the server...')
+    print('thrift_server=starting info')
     server.serve()
-    print('done.')
+    print('thrift_server=done info')

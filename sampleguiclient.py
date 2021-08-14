@@ -9,6 +9,7 @@ This code is in the public domain
 import os, sys, time
 import queue
 import design
+from threading import Thread
 
 import linecache
 import signal
@@ -18,6 +19,31 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 from socketclientthread import SocketClientThread, ClientCommand, ClientReply
+
+
+
+
+
+
+import glob
+import sys
+sys.path.append('thrift_server/gen-py')
+sys.path.insert(0, glob.glob('thrift_server/lib*')[0])
+
+from slave_controller import SlaveController
+from slave_controller.ttypes import ScannerStatus
+
+from thrift.transport import TSocket
+from thrift.transport import TTransport
+from thrift.protocol import TBinaryProtocol
+from thrift.server import TServer
+
+
+
+
+
+
+
 
 # SERVER_ADDR = 'localhost', 50007
 #SERVER_ADDR = '192.168.1.69', 6000
@@ -195,14 +221,6 @@ class SampleGUIClientWindow(QMainWindow):
         timestamp = '[%010.3f]' % time.process_time()
         self.log_widget.append(timestamp + ' ' + str(msg))
 
-# if __name__ == "__main__":
-#     app = QApplication(sys.argv)
-#     mainwindow = SampleGUIClientWindow()
-#     mainwindow.show()
-#     app.exec_()
-
-
-
 class SlaveGui(QMainWindow, design.Ui_MainWindow):
     def __init__(self):
         super().__init__()
@@ -220,6 +238,23 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.log("Started")
 
         signal.signal(signal.SIGTRAP, self.receiveSignal)
+
+    def scan(self, scan):
+        print('scan start: ', scan)
+
+    def scanner_status(self, status):
+        if status == ScannerStatus.Ready:
+            print('scan ready: ', status)
+            self.scanner_status_checkbox.setChecked(True)
+            self.scanner_status_checkbox.setEnabled(False)
+
+            palette = QPalette()
+            palette.setColor(QPalette.Base, QColor("#23F617"))
+            self.scanner_status_checkbox.setPalette(palette)
+        elif status == ScannerStatus.Stop:
+            print('scan stop: ', status)
+        else:
+            print('invalid status: ', status)
 
     def create_timers(self):
         self.client_reply_timer = QTimer(self)
@@ -275,24 +310,26 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         palette.setColor(QPalette.Base, QColor("#23F617"))
         self.scanner_status_checkbox.setPalette(palette)
 
+def create_thrift_server(SlaveGui):
+    handler = SlaveGui
+    processor = SlaveController.Processor(handler)
+    transport = TSocket.TServerSocket(host='localhost', port=9090)
+    tfactory = TTransport.TBufferedTransportFactory()
+    pfactory = TBinaryProtocol.TBinaryProtocolFactory()
+
+    server = TServer.TSimpleServer(processor, transport, tfactory, pfactory)
+
+    print('thrift_server=starting info')
+    server.serve()
+    print('thrift_server=done info')
+
 if __name__ == "__main__":
-    pid = str(os.getpid())
-    print(os.path.expanduser('~'))
-
-    pid_file = os.path.expanduser('~') + '/slave_controller_pid.txt'
-
-    print('My PID is:', pid)
-    print('pid_file:', pid_file)
-    with open(pid_file, 'w') as file:
-        file.write(pid)
-
     app = QApplication(sys.argv)
     mainwindow = SlaveGui()
+
+    thread = Thread(target=create_thrift_server, args=(mainwindow, ))
+    thread.start()
+
     mainwindow.show()
     app.exec_()
-
-    if os.path.isfile(pid_file):
-        os.remove(pid_file)
-        print("Deleted file %s" % pid_file)
-    else:
-        print("Error: %s file not found" % pid_file)
+    thread.join()
