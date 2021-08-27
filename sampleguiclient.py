@@ -9,6 +9,9 @@ This code is in the public domain
 import os, sys, time
 import queue
 import design
+import re
+
+from datetime import datetime
 from threading import Thread
 
 import linecache
@@ -230,6 +233,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.create_client()
 
         self.ready_button.clicked.connect(self.send_ready)
+        self.finish_button.clicked.connect(self.send_file)
 
         self.scanner_status_checkbox.setEnabled(False)
 
@@ -240,7 +244,56 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         signal.signal(signal.SIGTRAP, self.receiveSignal)
 
     def scan(self, scan):
+        scan_len = len(scan)
         print('scan start: ', scan)
+        print('scan len: ', scan_len)
+
+        if scan_len <= 20:
+            self.log('Маленькая длина! Отбраковано')
+            print('Scan len <= 20 Warn')
+            # отправить сигнал отбраковщику
+            return
+
+        gs_pos = scan.find(chr(29))
+        print('gs_pos = ', gs_pos)
+
+        if gs_pos == -1:
+            print('Нет символа GS Warn')
+            self.log('Нет символа GS! Отбраковано')
+            # отправить сигнал отбраковщику
+            return
+
+        print('Скан ок')
+
+        # scan = "\"1234\"5"
+        # print('scan : ', scan)
+        #
+        # scan = re.sub(r"\"", '\"\"', scan)
+        # print('scan : ', scan)
+        #
+        #scan = scan[:gs_pos]
+        #print('scan : ', scan)
+
+        date_time = datetime.now().strftime("%d.%m.%Y")
+        filename = 'ki_' + date_time + '.txt'
+
+        if not os.path.exists(filename):
+            os.mknod(filename)
+
+        with open(filename) as f:
+            if scan in f.read():
+                print("дубликат!")
+                self.log('Дубликат! Отбраковано')
+                # отправить сигнал отбраковщику
+                return
+
+        print("оригинальный!")
+
+        with open(filename, "a") as myfile:
+            myfile.write(scan + "\n")
+
+        self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 2, 7, scan))
+        self.log('Записан в файл. Подготовлен для отправки')
 
     def scanner_status(self, status):
         if status == ScannerStatus.Ready:
@@ -265,6 +318,21 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.client.cmd_q.put(ClientCommand(ClientCommand.CONNECT, 1, 7, SERVER_ADDR))
         self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 1, 7))
         self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE))
+
+    def send_file(self):
+        date_time = datetime.now().strftime("%d.%m.%Y")
+        filename = 'ki_' + date_time + '.txt'
+        print("Подготовка к отправке файла ", filename)
+
+        if not os.path.exists(filename):
+            print("Файла нет!")
+            return
+
+        with open(filename, "r") as myfile:
+            bytes = myfile.read()
+            print("Считаны данные из файла ", bytes)
+            self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 3, 7, bytes))
+            #self.log('Файл отправлен')
 
     def on_client_reply_timer(self):
         try:

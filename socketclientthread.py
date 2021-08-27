@@ -103,7 +103,7 @@ class SocketClientThread(threading.Thread):
     #  def _handle_SEND_ready(self, cmd):
     def _handle_SEND(self, cmd):
         print("_handle_SEND_ready")
-        #print("len(cmd.data): ", len(cmd.data))
+
         # msg_type = struct.pack('>b', cmd.data[0])
         #msg_type = cmd.data[0]
         print("cmd.msg_type: ", cmd.msg_type)
@@ -122,11 +122,16 @@ class SocketClientThread(threading.Thread):
         # scan3 = linecache.getline('/home/avovana/slave_controller/scans.txt', 3)
         # print("scan.encode(): ", scan.encode() + scan2.encode() + scan3.encode())
         # self.socket.sendall(scan.encode() + scan2.encode() + scan3.encode())
-        # header = struct.pack('>L', 2 + len(scan))
         header = struct.pack('>L', 2)
+        if cmd.data is not None:
+            print("len(cmd.data): ", len(cmd.data))
+            header = struct.pack('>L', 2 + len(cmd.data))
         try:
             #self.socket.sendall(header + format(msg_type).encode() + format(line_number).encode())
-            self.socket.sendall(header + struct.pack('>b', cmd.msg_type) + struct.pack('>b', cmd.line_number))
+            if cmd.data is None:
+                self.socket.sendall(header + struct.pack('>b', cmd.msg_type) + struct.pack('>b', cmd.line_number))
+            else:
+                self.socket.sendall(header + struct.pack('>b', cmd.msg_type) + struct.pack('>b', cmd.line_number) + cmd.data.encode())
 
             self.reply_q.put(self._success_reply())
         except IOError as e:
