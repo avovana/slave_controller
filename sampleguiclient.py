@@ -20,6 +20,8 @@ import signal
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
+from PyQt5.QtSerialPort import QSerialPort, QSerialPortInfo
+
 
 from socketclientthread import SocketClientThread, ClientCommand, ClientReply
 
@@ -243,10 +245,60 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         signal.signal(signal.SIGTRAP, self.receiveSignal)
 
+        self.product_passed_dt = datetime.now()
+
+        #-----------------
+        available_ports = QSerialPortInfo.availablePorts()
+        print('here: ')
+        for port in available_ports:
+            print('port: ', port.portName())
+
+        port = "ttyS1"
+        self.serial = QSerialPort(self)
+        self.serial.setPortName(port)
+        if self.serial.open(QIODevice.ReadWrite):
+            self.serial.setBaudRate(115200)
+            self.serial.readyRead.connect(self.on_serial_read)
+            # clear the text
+            # self.clear()
+            # Send a Control-C
+            # self.serial.write(b'\x03')
+        else:
+            raise IOError("Cannot connect to device on port {}".format(port))
+        #self.set_theme(theme)
+        print('COM PORT connected INFO')
+
+    def on_serial_read(self):
+        print('on_serial_read ')
+        readbytes = bytes(self.serial.readAll())
+
+        print('on_serial_read ', readbytes)
+        self.serial.write(readbytes)
+
+        for byte in readbytes:
+            if byte == 8:  # \b Допустим пришел символ, который говорит о том, что датчик зафиксировал продукцию. Что скан с неё скоро должен быть считан
+                self.product_passed_dt = datetime.now()
+            #elif byte == 13:  # \r
+            #    pass
+            #else:
+
+
     def scan(self, scan):
         scan_len = len(scan)
         print('scan start: ', scan)
         print('scan len: ', scan_len)
+
+        current_dt = datetime.now()
+        duration = self.product_passed_dt - current_dt
+        duration_in_ms = duration.total_seconds() * 1000
+
+        print('duration_in_ms: ', duration_in_ms)
+        if duration_in_ms > 500:
+            self.log('Прошло больше 500 мс! Отбраковано')
+            print('Прошло больше 500 мс! Отбраковано')
+            msg = b'\x1B'
+            self.serial.write(msg)
+            return
 
         if scan_len <= 20:
             self.log('Маленькая длина! Отбраковано')
