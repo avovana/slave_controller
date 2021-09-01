@@ -16,6 +16,7 @@ from threading import Thread
 
 import linecache
 import signal
+import time
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -262,26 +263,45 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             # clear the text
             # self.clear()
             # Send a Control-C
-            # self.serial.write(b'\x03')
+            self.serial.write(b'h\n')
         else:
             raise IOError("Cannot connect to device on port {}".format(port))
         #self.set_theme(theme)
         print('COM PORT connected INFO')
 
     def on_serial_read(self):
-        print('on_serial_read ')
+        print('on_serial_read starting...')
         readbytes = bytes(self.serial.readAll())
 
         print('on_serial_read ', readbytes)
-        self.serial.write(readbytes)
+        #self.serial.write(readbytes)
+
+        if readbytes == b'h\n':
+            print('Received:', "b'h\\n'")
+            self.comport_status_checkbox.setChecked(True)
+
+            palette = QPalette()
+            palette.setColor(QPalette.Base, QColor("#23F617"))
+            self.comport_status_checkbox.setPalette(palette)
+
+            time.sleep(3)  # Сон в 3 секунды
+            self.serial.write(readbytes)
 
         for byte in readbytes:
+            if byte == b'h\n':
+                print('Received:', "b'\x66'")
+                self.comport_status_checkbox.setChecked(True)
+
+                palette = QPalette()
+                palette.setColor(QPalette.Base, QColor("#23F617"))
+                self.comport_status_checkbox.setPalette(palette)
+
             if byte == 8:  # \b Допустим пришел символ, который говорит о том, что датчик зафиксировал продукцию. Что скан с неё скоро должен быть считан
                 self.product_passed_dt = datetime.now()
             #elif byte == 13:  # \r
             #    pass
             #else:
-
+        print('on_serial_read finished')
 
     def scan(self, scan):
         scan_len = len(scan)
@@ -357,7 +377,11 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             palette.setColor(QPalette.Base, QColor("#23F617"))
             self.scanner_status_checkbox.setPalette(palette)
         elif status == ScannerStatus.Stop:
+            self.scanner_status_checkbox.setChecked(False)
             print('scan stop: ', status)
+            palette = QPalette()
+            palette.setColor(QPalette.Base, QColor("#ff1200"))
+            self.scanner_status_checkbox.setPalette(palette)
         else:
             print('invalid status: ', status)
 
