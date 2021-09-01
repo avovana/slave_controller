@@ -205,6 +205,9 @@ class SampleGUIClientWindow(QMainWindow):
             if msg_type == 4:
                 self.name_label.setText(body.split(",")[0])
                 self.plan_label.setText(body.split(",")[1])
+            elif msg_type == 6:
+                self.log('Можно начинать')
+                #  self.name_label.setText(body.split(",")[0])
 
             # if msg_type == 4:
             #     #print("header_data[0:4]", body_data[0:4])
@@ -391,9 +394,11 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.client_reply_timer.start(100)
 
     def send_ready(self):
-        self.client.cmd_q.put(ClientCommand(ClientCommand.CONNECT, 1, 7, SERVER_ADDR))
-        self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 1, 7))
-        self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE))
+        line_number = self.line_number_combobox.currentText()
+        self.client.cmd_q.put(ClientCommand(ClientCommand.CONNECT, 1, int(line_number), SERVER_ADDR))
+        self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 1, int(line_number)))
+        self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE))  # Wait info
+        self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE))  # Wait start_signal
 
     def send_file(self):
         date_time = datetime.now().strftime("%d.%m.%Y")
@@ -413,8 +418,9 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
     def on_client_reply_timer(self):
         try:
             reply = self.client.reply_q.get(block=False)
-            status = "SUCCESS" if reply.type == ClientReply.SUCCESS else "ERROR"
-            self.log('Client reply %s: %s' % (status, reply.data))
+            status = "УСПЕШНО" if reply.type == ClientReply.SUCCESS else "ОШИБКА"
+            #  "Получены данные: " + body_data.decode('utf-8')
+            self.log('%s: %s' % (status, reply.data))
             # print("   reply.type:", reply.type)
             # print("   reply.data:", reply.data)
 
@@ -434,6 +440,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                 name, plan = body.split(",")
                 self.name_label.setText(name)
                 self.plan_label.setText(plan)
+            elif msg_type == 6:
+                self.log('Можно начинать')
         except queue.Empty:
             pass
 

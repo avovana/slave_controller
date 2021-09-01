@@ -81,7 +81,7 @@ class SocketClientThread(threading.Thread):
             self.socket = socket.socket(
                 socket.AF_INET, socket.SOCK_STREAM)
             self.socket.connect((cmd.data[0], cmd.data[1]))
-            self.reply_q.put(self._success_reply())
+            self.reply_q.put(self._success_reply("Установлена связь"))
         except IOError as e:
             self.reply_q.put(self._error_reply(str(e)))
 
@@ -133,7 +133,7 @@ class SocketClientThread(threading.Thread):
             else:
                 self.socket.sendall(header + struct.pack('>b', cmd.msg_type) + struct.pack('>b', cmd.line_number) + cmd.data.encode())
 
-            self.reply_q.put(self._success_reply())
+            self.reply_q.put(self._success_reply("Отправлен запрос"))
         except IOError as e:
             self.reply_q.put(self._error_reply(str(e)))
 
@@ -143,7 +143,7 @@ class SocketClientThread(threading.Thread):
             #msg_len = self._recv_header()  # если не коннектев, то исключение
             #print("--msg_len: ", msg_len)
 
-            header_data = self._recv_n_bytes(4) # если не коннектев, то исключение
+            header_data = self._recv_n_bytes(4)  # если не коннектев, то исключение
             print("header_data: ", header_data)
             msg_size = int.from_bytes(header_data, byteorder='big', signed=False)
             print("msg_size: ", msg_size)
