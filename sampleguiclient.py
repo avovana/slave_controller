@@ -13,6 +13,7 @@ import re
 
 from datetime import datetime
 from threading import Thread
+import threading
 
 import linecache
 import signal
@@ -230,6 +231,18 @@ class SampleGUIClientWindow(QMainWindow):
         timestamp = '[%010.3f]' % time.process_time()
         self.log_widget.append(timestamp + ' ' + str(msg))
 
+class ThriftImpl(QObject):
+    scan_signal = pyqtSignal(str)
+    scanner_state_signal = pyqtSignal(int)
+    def __init__(self):
+        QObject.__init__(self)
+
+    def scan(self, scan):
+        self.scan_signal.emit(scan)
+
+    def scanner_status(self, state):
+        self.scanner_state_signal.emit(state)
+
 class SlaveGui(QMainWindow, design.Ui_MainWindow):
     def __init__(self):
         super().__init__()
@@ -251,9 +264,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         self.product_passed_dt = datetime.now()
 
-        #-----------------
+        #-----------------Serial Port-----------------
         available_ports = QSerialPortInfo.availablePorts()
-        print('here: ')
         for port in available_ports:
             print('port: ', port.portName())
 
@@ -263,21 +275,17 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         if self.serial.open(QIODevice.ReadWrite):
             self.serial.setBaudRate(115200)
             self.serial.readyRead.connect(self.on_serial_read)
-            # clear the text
-            # self.clear()
-            # Send a Control-C
             self.serial.write(b'h\n')
         else:
             raise IOError("Cannot connect to device on port {}".format(port))
-        #self.set_theme(theme)
+
         print('COM PORT connected INFO')
 
     def on_serial_read(self):
         print('on_serial_read starting...')
         readbytes = bytes(self.serial.readAll())
 
-        print('on_serial_read ', readbytes)
-        #self.serial.write(readbytes)
+        print('readbytes: ', readbytes)
 
         if readbytes == b'h\n':
             print('Received:', "b'h\\n'")
@@ -286,42 +294,31 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             palette = QPalette()
             palette.setColor(QPalette.Base, QColor("#23F617"))
             self.comport_status_checkbox.setPalette(palette)
+        elif readbytes == b'p\n':
+            print('Received:', "b'p\\n'")
+            self.product_passed_dt = datetime.now()
+            print('product_passed_dt: ', self.product_passed_dt)
 
-            time.sleep(3)  # Сон в 3 секунды
-            self.serial.write(readbytes)
-
-        for byte in readbytes:
-            if byte == b'h\n':
-                print('Received:', "b'\x66'")
-                self.comport_status_checkbox.setChecked(True)
-
-                palette = QPalette()
-                palette.setColor(QPalette.Base, QColor("#23F617"))
-                self.comport_status_checkbox.setPalette(palette)
-
-            if byte == 8:  # \b Допустим пришел символ, который говорит о том, что датчик зафиксировал продукцию. Что скан с неё скоро должен быть считан
-                self.product_passed_dt = datetime.now()
-            #elif byte == 13:  # \r
-            #    pass
-            #else:
         print('on_serial_read finished')
 
     def scan(self, scan):
         scan_len = len(scan)
-        print('scan start: ', scan)
+        print('scan : ', scan)
         print('scan len: ', scan_len)
 
         current_dt = datetime.now()
-        duration = self.product_passed_dt - current_dt
+        duration = current_dt - self.product_passed_dt
         duration_in_ms = duration.total_seconds() * 1000
 
         print('duration_in_ms: ', duration_in_ms)
         if duration_in_ms > 500:
             self.log('Прошло больше 500 мс! Отбраковано')
-            print('Прошло больше 500 мс! Отбраковано')
-            msg = b'\x1B'
+            print('Прошло больше 500 мс! Отбраковано WARN')
+            msg = b'e\n'
             self.serial.write(msg)
             return
+
+        print('Скан успел пройти!')
 
         if scan_len <= 20:
             self.log('Маленькая длина! Отбраковано')
@@ -355,12 +352,12 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         if not os.path.exists(filename):
             os.mknod(filename)
 
-        with open(filename) as f:
-            if scan in f.read():
-                print("дубликат!")
-                self.log('Дубликат! Отбраковано')
-                # отправить сигнал отбраковщику
-                return
+        # with open(filename) as f:
+        #     if scan in f.read():
+        #         print("дубликат!")
+        #         self.log('Дубликат! Отбраковано')
+        #         # отправить сигнал отбраковщику
+        #         return
 
         print("оригинальный!")
 
@@ -462,9 +459,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         palette.setColor(QPalette.Base, QColor("#23F617"))
         self.scanner_status_checkbox.setPalette(palette)
 
-def create_thrift_server(SlaveGui):
-    handler = SlaveGui
-    processor = SlaveController.Processor(handler)
+def create_thrift_server(thrift_client):
+    processor = SlaveController.Processor(thrift_client)
     transport = TSocket.TServerSocket(host='localhost', port=9090)
     tfactory = TTransport.TBufferedTransportFactory()
     pfactory = TBinaryProtocol.TBinaryProtocolFactory()
@@ -478,8 +474,12 @@ def create_thrift_server(SlaveGui):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     mainwindow = SlaveGui()
+    thrift_impl = ThriftImpl()
 
-    thread = Thread(target=create_thrift_server, args=(mainwindow, ))
+    thrift_impl.scan_signal.connect(mainwindow.scan)
+    thrift_impl.scanner_state_signal.connect(mainwindow.scanner_status)
+
+    thread = Thread(target=create_thrift_server, args=(thrift_impl,))
     thread.start()
 
     mainwindow.show()

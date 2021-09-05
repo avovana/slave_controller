@@ -56,6 +56,16 @@
       </property>
      </widget>
     </item>
+    <item row="2" column="3">
+     <widget class="QLabel" name="plan_label_2">
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string>План</string>
+      </property>
+     </widget>
+    </item>
     <item row="3" column="4">
      <widget class="QLabel" name="current_label">
       <property name="styleSheet">
@@ -120,6 +130,16 @@
       </item>
      </widget>
     </item>
+    <item row="2" column="4">
+     <widget class="QLabel" name="current_label_2">
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string>Факт</string>
+      </property>
+     </widget>
+    </item>
     <item row="1" column="0" colspan="5">
      <widget class="QPushButton" name="ready_button">
       <property name="styleSheet">
@@ -159,6 +179,16 @@
       </property>
       <property name="text">
        <string>Завершить. Отправить файл</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0" colspan="3">
+     <widget class="QLabel" name="product_name_label">
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string>Наименование продукции</string>
       </property>
      </widget>
     </item>
@@ -631,36 +661,6 @@
       </property>
       <property name="text">
        <string>Номер линии</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="3">
-     <widget class="QLabel" name="plan_label_2">
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <property name="text">
-       <string>План</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="4">
-     <widget class="QLabel" name="current_label_2">
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <property name="text">
-       <string>Факт</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="0" colspan="3">
-     <widget class="QLabel" name="product_name_label">
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <property name="text">
-       <string>Наименование продукции</string>
       </property>
      </widget>
     </item>
