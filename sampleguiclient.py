@@ -80,6 +80,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         signal.signal(signal.SIGTRAP, self.receiveSignal)
 
         self.product_passed_dt = datetime.now()
+        self.current = 0
 
         #-----------------Serial Port-----------------
         available_ports = QSerialPortInfo.availablePorts()
@@ -128,12 +129,12 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         duration_in_ms = duration.total_seconds() * 1000
 
         print('duration_in_ms: ', duration_in_ms)
-        if duration_in_ms > 500:
-            self.log('Прошло больше 500 мс! Отбраковано')
-            print('Прошло больше 500 мс! Отбраковано WARN')
-            msg = b'e\n'
-            self.serial.write(msg)
-            return
+        # if duration_in_ms > 500:
+        #     self.log('Прошло больше 500 мс! Отбраковано')
+        #     print('Прошло больше 500 мс! Отбраковано WARN')
+        #     msg = b'e\n'
+        #     self.serial.write(msg)
+        #     return
 
         print('Скан успел пройти!')
 
@@ -184,6 +185,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         line_number = self.line_number_combobox.currentText()
         self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 2, int(line_number), scan))
         self.log('Записан в файл. Подготовлен для отправки')
+        self.current = self.current + 1
+        self.current_label.setText(str(self.current))
 
     def scanner_status(self, status):
         if status == ScannerStatus.Ready:
