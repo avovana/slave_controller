@@ -181,7 +181,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         with open(filename, "a") as myfile:
             myfile.write(scan + "\n")
 
-        self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 2, 7, scan))
+        line_number = self.line_number_combobox.currentText()
+        self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 2, int(line_number), scan))
         self.log('Записан в файл. Подготовлен для отправки')
 
     def scanner_status(self, status):
@@ -215,6 +216,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE))  # Wait start_signal
 
     def send_file(self):
+        line_number = self.line_number_combobox.currentText()
+
         date_time = datetime.now().strftime("%d.%m.%Y")
         filename = 'ki_' + date_time + '.txt'
         print("Подготовка к отправке файла ", filename)
@@ -226,7 +229,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         with open(filename, "r") as myfile:
             bytes = myfile.read()
             print("Считаны данные из файла ", bytes)
-            self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 3, 7, bytes))
+            self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 3, int(line_number), bytes))
             #self.log('Файл отправлен')
 
     def on_client_reply_timer(self):
