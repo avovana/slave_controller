@@ -87,15 +87,15 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         for port in available_ports:
             print('port: ', port.portName())
 
-        port = "ttyS1"
-        self.serial = QSerialPort(self)
-        self.serial.setPortName(port)
-        if self.serial.open(QIODevice.ReadWrite):
-            self.serial.setBaudRate(115200)
-            self.serial.readyRead.connect(self.on_serial_read)
-            self.serial.write(b'h\n')
-        else:
-            raise IOError("Cannot connect to device on port {}".format(port))
+        # port = "ttyS1"
+        # self.serial = QSerialPort(self)
+        # self.serial.setPortName(port)
+        # if self.serial.open(QIODevice.ReadWrite):
+        #     self.serial.setBaudRate(115200)
+        #     self.serial.readyRead.connect(self.on_serial_read)
+        #     self.serial.write(b'h\n')
+        # else:
+        #     raise IOError("Cannot connect to device on port {}".format(port))
 
         print('COM PORT connected INFO')
 
@@ -165,7 +165,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         #print('scan : ', scan)
 
         date_time = datetime.now().strftime("%d.%m.%Y")
-        filename = 'ki_' + date_time + '.txt'
+        filename = 'ki_' + self.name_label.text() + '_' + date_time + '.txt'
 
         if not os.path.exists(filename):
             os.mknod(filename)
@@ -222,7 +222,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         line_number = self.line_number_combobox.currentText()
 
         date_time = datetime.now().strftime("%d.%m.%Y")
-        filename = 'ki_' + date_time + '.txt'
+        filename = 'ki_' + self.name_label.text() + '_' + date_time + '.txt'
         print("Подготовка к отправке файла ", filename)
 
         if not os.path.exists(filename):
