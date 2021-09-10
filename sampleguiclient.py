@@ -75,6 +75,10 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         self.create_timers()
 
+        self.sensor_counter = 0
+        self.scan_counter = 0
+        self.defect_counter = 0
+
         self.log("Started")
 
         signal.signal(signal.SIGTRAP, self.receiveSignal)
@@ -84,38 +88,52 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         #-----------------Serial Port-----------------
         available_ports = QSerialPortInfo.availablePorts()
+
         for port in available_ports:
             print('port: ', port.portName())
 
-        # port = "ttyS1"
-        # self.serial = QSerialPort(self)
-        # self.serial.setPortName(port)
-        # if self.serial.open(QIODevice.ReadWrite):
-        #     self.serial.setBaudRate(115200)
-        #     self.serial.readyRead.connect(self.on_serial_read)
-        #     self.serial.write(b'h\n')
-        # else:
-        #     raise IOError("Cannot connect to device on port {}".format(port))
+        if len(available_ports) == 0:
+            raise IOError("No available com ports ERROR")
+
+        port = "ttyS1"
+        #port = available_ports[0].portName()
+        self.serial = QSerialPort(self)
+        self.serial.setPortName(port)
+        if self.serial.open(QIODevice.ReadWrite):
+            self.serial.setBaudRate(9600)
+            self.serial.readyRead.connect(self.on_serial_read)
+            self.serial.write(b'Start')
+
+            self.comport_status_checkbox.setChecked(True)
+            palette = QPalette()
+            palette.setColor(QPalette.Base, QColor("#23F617"))
+            self.comport_status_checkbox.setPalette(palette)
+        else:
+            raise IOError("Cannot connect to device on port {}".format(port))
 
         print('COM PORT connected INFO')
 
     def on_serial_read(self):
         print('on_serial_read starting...')
+        print('sensor_counter=', self.sensor_counter)
+        print('scan_counter=  ', self.scan_counter)
+        print('defect_counter=', self.defect_counter)
         readbytes = bytes(self.serial.readAll())
 
         print('readbytes: ', readbytes)
 
-        if readbytes == b'h\n':
-            print('Received:', "b'h\\n'")
-            self.comport_status_checkbox.setChecked(True)
-
-            palette = QPalette()
-            palette.setColor(QPalette.Base, QColor("#23F617"))
-            self.comport_status_checkbox.setPalette(palette)
-        elif readbytes == b'p\n':
+        if readbytes == b'p\n':
             print('Received:', "b'p\\n'")
             self.product_passed_dt = datetime.now()
             print('product_passed_dt: ', self.product_passed_dt)
+            self.sensor_counter = self.sensor_counter + 1
+
+            if self.sensor_counter == self.scan_counter + 1 + self.defect_counter:
+                print('norm scan')
+            else:
+                print('ne norm scan')
+                self.defect_counter = self.defect_counter + 1
+                self.serial.write(b'brak')
 
         print('on_serial_read finished')
 
@@ -123,6 +141,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         scan_len = len(scan)
         print('scan : ', scan)
         print('scan len: ', scan_len)
+
+        self.scan_counter = self.scan_counter + 1
 
         current_dt = datetime.now()
         duration = current_dt - self.product_passed_dt
@@ -135,13 +155,13 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         #     msg = b'e\n'
         #     self.serial.write(msg)
         #     return
-
-        print('Скан успел пройти!')
+        #print('Скан успел пройти!')
 
         if scan_len <= 20:
             self.log('Маленькая длина! Отбраковано')
             print('Scan len <= 20 Warn')
-            # отправить сигнал отбраковщику
+            self.defect_counter = self.defect_counter + 1
+            self.serial.write(b'brak')
             return
 
         gs_pos = scan.find(chr(29))
@@ -150,19 +170,11 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         if gs_pos == -1:
             print('Нет символа GS Warn')
             self.log('Нет символа GS! Отбраковано')
-            # отправить сигнал отбраковщику
+            self.defect_counter = self.defect_counter + 1
+            self.serial.write(b'brak')
             return
 
         print('Скан ок')
-
-        # scan = "\"1234\"5"
-        # print('scan : ', scan)
-        #
-        # scan = re.sub(r"\"", '\"\"', scan)
-        # print('scan : ', scan)
-        #
-        #scan = scan[:gs_pos]
-        #print('scan : ', scan)
 
         date_time = datetime.now().strftime("%d.%m.%Y")
         filename = 'ki_' + self.name_label.text() + '_' + date_time + '.txt'
@@ -174,7 +186,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         #     if scan in f.read():
         #         print("дубликат!")
         #         self.log('Дубликат! Отбраковано')
-        #         # отправить сигнал отбраковщику
+        #         self.defect_counter = self.defect_counter + 1
+        #         self.serial.write(b'brak')
         #         return
 
         print("оригинальный!")
