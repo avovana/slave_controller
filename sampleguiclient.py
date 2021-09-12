@@ -70,6 +70,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         self.ready_button.clicked.connect(self.send_ready)
         self.finish_button.clicked.connect(self.send_file)
+        self.choose_file_pushbutton.clicked.connect(self.choose_file)
 
         self.scanner_status_checkbox.setEnabled(False)
 
@@ -85,6 +86,9 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         self.product_passed_dt = datetime.now()
         self.current = 0
+
+        date_time = datetime.now().strftime("%d.%m.%Y-%H:%M")
+        self.filename = 'ki_' + self.name_label.text() + '_' + date_time + '.txt'
 
         #-----------------Serial Port-----------------
         available_ports = QSerialPortInfo.availablePorts()
@@ -113,6 +117,18 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
 
         print('COM PORT connected INFO')
+
+    def choose_file(self):
+        self.filename = QFileDialog.getOpenFileName()
+        print('self.filename: ', self.filename[0])
+
+        count = 0
+        with open(self.filename[0], 'r') as f:
+            for line in f:
+                count += 1
+
+        self.current = count
+        self.current_label.setText(str(self.current))
 
     def on_serial_read(self):
         print('on_serial_read starting...')
@@ -185,12 +201,12 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         print('Скан ок')
 
         date_time = datetime.now().strftime("%d.%m.%Y")
-        filename = 'ki_' + self.name_label.text() + '_' + date_time + '.txt'
+        self.filename = 'ki_' + self.name_label.text() + '_' + date_time + '.txt'
 
-        if not os.path.exists(filename):
-            os.mknod(filename)
+        if not os.path.exists(self.filename):
+            os.mknod(self.filename)
 
-        with open(filename) as f:
+        with open(self.filename) as f:
             if scan in f.read():
                 print("дубликат!")
                 self.log('Дубликат! Отбраковано')
@@ -202,7 +218,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         print("оригинальный!")
         self.scan_counter = self.scan_counter + 1
 
-        with open(filename, "a") as myfile:
+        with open(self.filename, "a") as myfile:
             myfile.write(scan + "\n")
 
         line_number = self.line_number_combobox.currentText()
