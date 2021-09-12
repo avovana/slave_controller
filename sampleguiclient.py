@@ -39,7 +39,7 @@ from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol
 from thrift.server import TServer
 
-SERVER_ADDR = 'localhost', 6000
+SERVER_ADDR = '192.168.0.116', 6000
 
 class LogWidget(QTextBrowser):
     def __init__(self, parent=None):
@@ -95,14 +95,14 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         if len(available_ports) == 0:
             raise IOError("No available com ports ERROR")
 
-        port = "ttyS1"
-        #port = available_ports[0].portName()
+        #port = "ttyS1"
+        port = available_ports[0].portName()
         self.serial = QSerialPort(self)
         self.serial.setPortName(port)
         if self.serial.open(QIODevice.ReadWrite):
             self.serial.setBaudRate(9600)
             self.serial.readyRead.connect(self.on_serial_read)
-            self.serial.write(b'Start')
+            #self.serial.write(b'Start' + bytes('\n'.encode()))
 
             self.comport_status_checkbox.setChecked(True)
             palette = QPalette()
@@ -110,6 +110,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             self.comport_status_checkbox.setPalette(palette)
         else:
             raise IOError("Cannot connect to device on port {}".format(port))
+
 
         print('COM PORT connected INFO')
 
@@ -122,8 +123,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         print('readbytes: ', readbytes)
 
-        if readbytes == b'p\n':
-            print('Received:', "b'p\\n'")
+        if readbytes == b'+1\r\n':
             self.product_passed_dt = datetime.now()
             print('product_passed_dt: ', self.product_passed_dt)
             self.sensor_counter = self.sensor_counter + 1
@@ -133,7 +133,12 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             else:
                 print('ne norm scan')
                 self.defect_counter = self.defect_counter + 1
-                self.serial.write(b'brak')
+
+                self.serial.write(b'brak' + bytes('\n'.encode()))
+        elif readbytes == b'ON\r\n':
+            print('On processed')
+        elif readbytes == b'OFF\r\n':
+            print('OFF processed')
 
         print('on_serial_read finished')
 
@@ -142,7 +147,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         print('scan : ', scan)
         print('scan len: ', scan_len)
 
-        self.scan_counter = self.scan_counter + 1
+
 
         current_dt = datetime.now()
         duration = current_dt - self.product_passed_dt
@@ -161,7 +166,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             self.log('Маленькая длина! Отбраковано')
             print('Scan len <= 20 Warn')
             self.defect_counter = self.defect_counter + 1
-            self.serial.write(b'brak')
+
+            self.serial.write(b'brak' + bytes('\n'.encode()))
             return
 
         gs_pos = scan.find(chr(29))
@@ -171,7 +177,9 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             print('Нет символа GS Warn')
             self.log('Нет символа GS! Отбраковано')
             self.defect_counter = self.defect_counter + 1
-            self.serial.write(b'brak')
+
+            #self.serial.write(bytes([98, 114, 97, 107, 10]))  # brak/n
+            self.serial.write(b'brak' + bytes('\n'.encode()))
             return
 
         print('Скан ок')
@@ -182,15 +190,17 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         if not os.path.exists(filename):
             os.mknod(filename)
 
-        # with open(filename) as f:
-        #     if scan in f.read():
-        #         print("дубликат!")
-        #         self.log('Дубликат! Отбраковано')
-        #         self.defect_counter = self.defect_counter + 1
-        #         self.serial.write(b'brak')
-        #         return
+        with open(filename) as f:
+            if scan in f.read():
+                print("дубликат!")
+                self.log('Дубликат! Отбраковано')
+                self.defect_counter = self.defect_counter + 1
+
+                self.serial.write(b'brak' + bytes('\n'.encode()))
+                return
 
         print("оригинальный!")
+        self.scan_counter = self.scan_counter + 1
 
         with open(filename, "a") as myfile:
             myfile.write(scan + "\n")
@@ -225,6 +235,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.client_reply_timer.start(100)
 
     def send_ready(self):
+        #self.serial.write(b'brak' + bytes('\n'.encode()))
+
         line_number = self.line_number_combobox.currentText()
         self.client.cmd_q.put(ClientCommand(ClientCommand.CONNECT, 1, int(line_number), SERVER_ADDR))
         self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 1, int(line_number)))
