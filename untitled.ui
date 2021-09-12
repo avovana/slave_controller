@@ -26,6 +26,11 @@
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
@@ -38,6 +43,11 @@
      <widget class="QCheckBox" name="comport_status_checkbox">
       <property name="enabled">
        <bool>false</bool>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
       </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(141, 255, 255);</string>
@@ -52,6 +62,11 @@
     </item>
     <item row="3" column="4">
      <widget class="QLabel" name="current_label_2">
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
@@ -106,6 +121,11 @@
     </item>
     <item row="3" column="3">
      <widget class="QLabel" name="plan_label_2">
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
@@ -116,6 +136,11 @@
     </item>
     <item row="0" column="3">
      <widget class="QLabel" name="line_number_label">
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
@@ -600,6 +625,11 @@
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
@@ -610,6 +640,11 @@
     </item>
     <item row="3" column="0" colspan="3">
      <widget class="QLabel" name="product_name_label">
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
@@ -620,6 +655,11 @@
     </item>
     <item row="0" column="4">
      <widget class="QComboBox" name="line_number_combobox">
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
@@ -665,6 +705,11 @@
       <property name="enabled">
        <bool>false</bool>
       </property>
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
@@ -683,6 +728,11 @@
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
       </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(141, 255, 255);</string>
