@@ -48,12 +48,11 @@ class SocketClientThread(threading.Thread):
         can be controlled via the cmd_q queue attribute. Replies are placed in
         the reply_q queue attribute.
     """
-    def __init__(self, cmd_q=queue.Queue(), reply_q=queue.Queue()):
+    def __init__(self, tcp_thread_event, cmd_q=queue.Queue(), reply_q=queue.Queue()):
         super(SocketClientThread, self).__init__()
         self.cmd_q = cmd_q
         self.reply_q = reply_q
-        self.alive = threading.Event()
-        self.alive.set()
+        self.alive = tcp_thread_event
         self.socket = None
 
         self.handlers = {
@@ -71,10 +70,13 @@ class SocketClientThread(threading.Thread):
                 self.handlers[cmd.type](cmd)
             except queue.Empty as e:
                 continue
+        print("TCP thread finished")
 
     def join(self, timeout=None):
+        print("TCP start to join")
         self.alive.clear()
         threading.Thread.join(self, timeout)
+        print("TCP join finished")
 
     def _handle_CONNECT(self, cmd):
         try:

@@ -39,7 +39,8 @@ from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol
 from thrift.server import TServer
 
-SERVER_ADDR = '192.168.0.116', 6000
+#SERVER_ADDR = '192.168.0.116', 6000
+SERVER_ADDR = 'localhost', 6000
 
 class LogWidget(QTextBrowser):
     def __init__(self, parent=None):
@@ -65,8 +66,13 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         super().__init__()
 
         self.setupUi(self)
+        self.showMaximized()
 
-        self.create_client()
+        self.tcp_thread_event = threading.Event()
+        self.tcp_thread_event.set()
+
+        self.client = SocketClientThread(self.tcp_thread_event)
+        self.client.start()
 
         self.ready_button.clicked.connect(self.send_ready)
         self.finish_button.clicked.connect(self.send_file)
@@ -100,18 +106,16 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             raise IOError("No available com ports ERROR")
 
         #port = "ttyS1"
-        port = available_ports[0].portName()
+        # port = available_ports[0].portName()
+        port = available_ports[1].portName()
         self.serial = QSerialPort(self)
         self.serial.setPortName(port)
         if self.serial.open(QIODevice.ReadWrite):
             self.serial.setBaudRate(9600)
+            self.serial.clear()
             self.serial.readyRead.connect(self.on_serial_read)
+            self.serial.write(b'Hello' + bytes('\n'.encode()))
             #self.serial.write(b'Start' + bytes('\n'.encode()))
-
-            self.comport_status_checkbox.setChecked(True)
-            palette = QPalette()
-            palette.setColor(QPalette.Base, QColor("#23F617"))
-            self.comport_status_checkbox.setPalette(palette)
         else:
             raise IOError("Cannot connect to device on port {}".format(port))
 
@@ -139,7 +143,12 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         print('readbytes: ', readbytes)
 
-        if readbytes == b'+1\r\n':
+        if readbytes == b'Hello\r\n':
+            self.comport_status_checkbox.setChecked(True)
+            palette = QPalette()
+            palette.setColor(QPalette.Base, QColor("#23F617"))
+            self.comport_status_checkbox.setPalette(palette)
+        elif readbytes == b'+1\r\n':
             self.product_passed_dt = datetime.now()
             print('product_passed_dt: ', self.product_passed_dt)
             self.sensor_counter = self.sensor_counter + 1
@@ -306,10 +315,6 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         except queue.Empty:
             pass
 
-    def create_client(self):
-        self.client = SocketClientThread()
-        self.client.start()
-
     def log(self, msg):
         timestamp = '[%010.3f]' % time.process_time()
         self.text_browser.append(timestamp + ' ' + str(msg))
@@ -323,9 +328,9 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         palette.setColor(QPalette.Base, QColor("#23F617"))
         self.scanner_status_checkbox.setPalette(palette)
 
-def create_thrift_server(thrift_client):
+def create_thrift_server(thrift_client, transport):
     processor = SlaveController.Processor(thrift_client)
-    transport = TSocket.TServerSocket(host='localhost', port=9090)
+
     tfactory = TTransport.TBufferedTransportFactory()
     pfactory = TBinaryProtocol.TBinaryProtocolFactory()
 
@@ -336,16 +341,45 @@ def create_thrift_server(thrift_client):
     print('thrift_server=done info')
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    mainwindow = SlaveGui()
-    thrift_impl = ThriftImpl()
+    ret = os.fork()
+    if ret == 0:
+        print('CHILD  scanner run pid        ', os.getpid())
+        print('CHILD  scanner run parent pid ', os.getppid())
+        fd = os.open('scanner.log', os.O_WRONLY | os.O_APPEND)
+        os.dup2(fd, 1)
+        os.dup2(fd, 2)
+        os.execv("/home/avovana/build-scanner-Desktop-Debug/scanner", ["scanner"])
+    elif ret > 0:
+        print('PARENT sample  run pid        ', os.getpid())
+        print('PARENT sample  run parent pid ', os.getppid())
+        print('PARENTs child                 ', ret)
+        app = QApplication(sys.argv)
+        mainwindow = SlaveGui()
+        thrift_impl = ThriftImpl()
 
-    thrift_impl.scan_signal.connect(mainwindow.scan)
-    thrift_impl.scanner_state_signal.connect(mainwindow.scanner_status)
+        thrift_impl.scan_signal.connect(mainwindow.scan)
+        thrift_impl.scanner_state_signal.connect(mainwindow.scanner_status)
 
-    thread = Thread(target=create_thrift_server, args=(thrift_impl,))
-    thread.start()
+        transport = TSocket.TServerSocket(host='localhost', port=9090)
+        thread = Thread(target=create_thrift_server, args=(thrift_impl, transport))
+        thread.start()
 
-    mainwindow.show()
-    app.exec_()
-    thread.join()
+        mainwindow.show()
+        app.exec_()
+        # transport.close()
+        # thread.join()
+        os.kill(ret, 2)
+
+        print('Waiting child to finish...')
+        done = os.wait()
+        print('Child finished: ', {done})
+        # transport.close()
+        thread.join()
+        print('Thrift transport closed')
+        mainwindow.client.join()
+        #mainwindow.tcp_thread_event.clear()
+        mainwindow.close()
+        print('mainwindow transport closed')
+
+    print('End pid        ', os.getpid())
+    print('End parent pid ', os.getppid())

@@ -100,8 +100,8 @@ class TSimpleServer(TServer):
             try:
                 while True:
                     self.processor.process(iprot, oprot)
-            except TTransport.TTransportException:
-                pass
+            except TTransport.TTransportException:  # when client calls transport.close()
+                return
             except Exception as x:
                 logger.exception(x)
 
