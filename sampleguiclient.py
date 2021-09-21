@@ -108,7 +108,6 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         signal.signal(signal.SIGTRAP, self.receiveSignal)
 
         self.product_passed_dt = datetime.now()
-        self.current = 0
 
         date_time = datetime.now().strftime("%d.%m.%Y-%H:%M")
         self.filename = 'ki_' + self.name_label.text() + '_' + date_time + '.txt'
@@ -148,11 +147,11 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             for line in f:
                 count += 1
 
-        self.current = count
-        self.current_label.setText(str(self.current))
+        self.scan_counter = count
+        self.sensor_counter = count
+        self.current_label.setText(str(self.scan_counter))
 
     def on_serial_read(self):
-        print('on_serial_read starting...')
         print('sensor_counter=', self.sensor_counter)
         print('scan_counter=  ', self.scan_counter)
         print('defect_counter=', self.defect_counter)
@@ -166,26 +165,25 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             palette.setColor(QPalette.Base, QColor("#23F617"))
             self.comport_status_checkbox.setPalette(palette)
         elif readbytes == b'+1\r\n':
+            self.sensor_counter = self.sensor_counter + 1
+
             current_dt = datetime.now()
             duration = current_dt - self.product_passed_dt
             duration_in_ms = duration.total_seconds() * 1000
 
             print('duration_in_ms: ', duration_in_ms)
-            self.sensor_counter = self.sensor_counter + 1
 
-            if self.sensor_counter == self.scan_counter + 1 + self.defect_counter:
-                print('norm scan')
+            if self.sensor_counter == self.scan_counter + self.defect_counter:
+                print('previously scanner read scan success')
             else:
-                print('ne norm scan')
+                print('previously scanner read scan failed')
                 self.defect_counter = self.defect_counter + 1
-                self.serial.write(b'brak' + bytes('\n'.encode()))
+                self.serial.write(b'brak' + bytes('\n'.encode())) #self.serial.write(bytes([98, 114, 97, 107, 10]))  # brak/n
 
         elif readbytes == b'ON\r\n':
             print('On processed')
         elif readbytes == b'OFF\r\n':
             print('OFF processed')
-
-        print('on_serial_read finished')
 
     def scan(self, scan):
         scan_len = len(scan)
@@ -194,20 +192,9 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.product_passed_dt = datetime.now()
         print('product_passed_dt: ', self.product_passed_dt)
 
-        # if duration_in_ms > 500:
-        #     self.log('Прошло больше 500 мс! Отбраковано')
-        #     print('Прошло больше 500 мс! Отбраковано WARN')
-        #     msg = b'e\n'
-        #     self.serial.write(msg)
-        #     return
-        #print('Скан успел пройти!')
-
         if scan_len <= 20:
-            self.log('Маленькая длина! Отбраковано')
+            self.log('Маленькая длина! Будет отбраковано')
             print('Scan len <= 20 Warn')
-            self.defect_counter = self.defect_counter + 1
-
-            self.serial.write(b'brak' + bytes('\n'.encode()))
             return
 
         gs_pos = scan.find(chr(29))
@@ -215,14 +202,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         if gs_pos == -1:
             print('Нет символа GS Warn')
-            self.log('Нет символа GS! Отбраковано')
-            self.defect_counter = self.defect_counter + 1
-
-            #self.serial.write(bytes([98, 114, 97, 107, 10]))  # brak/n
-            self.serial.write(b'brak' + bytes('\n'.encode()))
+            self.log('Нет символа GS! Будет отбраковано')
             return
-
-        print('Скан ок')
 
         date_time = datetime.now().strftime("%d.%m.%Y")
         self.filename = 'ki_' + self.name_label.text() + '_' + date_time + '.txt'
@@ -233,13 +214,10 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         with open(self.filename) as f:
             if scan in f.read():
                 print("дубликат!")
-                self.log('Дубликат! Отбраковано')
-                self.defect_counter = self.defect_counter + 1
-
-                self.serial.write(b'brak' + bytes('\n'.encode()))
+                self.log('Дубликат! Будет отбраковано')
                 return
 
-        print("оригинальный!")
+        print("Скан валидный")
         self.scan_counter = self.scan_counter + 1
 
         with open(self.filename, "a") as myfile:
@@ -247,9 +225,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         line_number = self.line_number_combobox.currentText()
         self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 2, int(line_number), scan))
-        self.log('Записан в файл. Подготовлен для отправки')
-        self.current = self.current + 1
-        self.current_label.setText(str(self.current))
+        self.log('Скан записан в файл. Подготовлен для отправки')
+        self.current_label.setText(str(self.scan_counter))
 
     def scanner_status(self, status):
         if status == ScannerStatus.Ready:
