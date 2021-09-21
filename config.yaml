@@ -1,0 +1,4 @@
+comport: 1
+server: 
+    host: localhost
+    port: 6000
