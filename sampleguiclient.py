@@ -39,8 +39,25 @@ from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol
 from thrift.server import TServer
 
-#SERVER_ADDR = '192.168.0.116', 6000
-SERVER_ADDR = 'localhost', 6000
+import yaml
+
+
+class Config:
+    def __init__(self):
+        with open("config.yaml", "r") as f:
+            self.config = yaml.load(f, Loader=yaml.FullLoader)
+
+        self.comport = self.config['comport']
+        self.host = self.config['server']['host']
+        self.port = self.config['server']['port']
+
+        print("self.comport: ", self.comport)
+        print("self.host: ", self.host)
+        print("self.port: ", self.port)
+
+
+config = Config()
+SERVER_ADDR = config.host, config.port
 
 class LogWidget(QTextBrowser):
     def __init__(self, parent=None):
@@ -107,7 +124,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         #port = "ttyS1"
         # port = available_ports[0].portName()
-        port = available_ports[1].portName()
+        port = available_ports[config.comport].portName()
         self.serial = QSerialPort(self)
         self.serial.setPortName(port)
         if self.serial.open(QIODevice.ReadWrite):
@@ -149,8 +166,11 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             palette.setColor(QPalette.Base, QColor("#23F617"))
             self.comport_status_checkbox.setPalette(palette)
         elif readbytes == b'+1\r\n':
-            self.product_passed_dt = datetime.now()
-            print('product_passed_dt: ', self.product_passed_dt)
+            current_dt = datetime.now()
+            duration = current_dt - self.product_passed_dt
+            duration_in_ms = duration.total_seconds() * 1000
+
+            print('duration_in_ms: ', duration_in_ms)
             self.sensor_counter = self.sensor_counter + 1
 
             if self.sensor_counter == self.scan_counter + 1 + self.defect_counter:
@@ -158,8 +178,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             else:
                 print('ne norm scan')
                 self.defect_counter = self.defect_counter + 1
-
                 self.serial.write(b'brak' + bytes('\n'.encode()))
+
         elif readbytes == b'ON\r\n':
             print('On processed')
         elif readbytes == b'OFF\r\n':
@@ -170,15 +190,10 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
     def scan(self, scan):
         scan_len = len(scan)
         print('scan : ', scan)
-        print('scan len: ', scan_len)
 
+        self.product_passed_dt = datetime.now()
+        print('product_passed_dt: ', self.product_passed_dt)
 
-
-        current_dt = datetime.now()
-        duration = current_dt - self.product_passed_dt
-        duration_in_ms = duration.total_seconds() * 1000
-
-        print('duration_in_ms: ', duration_in_ms)
         # if duration_in_ms > 500:
         #     self.log('Прошло больше 500 мс! Отбраковано')
         #     print('Прошло больше 500 мс! Отбраковано WARN')
@@ -345,7 +360,7 @@ if __name__ == "__main__":
     if ret == 0:
         print('CHILD  scanner run pid        ', os.getpid())
         print('CHILD  scanner run parent pid ', os.getppid())
-        fd = os.open('scanner.log', os.O_WRONLY | os.O_APPEND)
+        fd = os.open('scanner.log', os.O_CREAT | os.O_WRONLY | os.O_APPEND)
         os.dup2(fd, 1)
         os.dup2(fd, 2)
         os.execv("/home/avovana/build-scanner-Desktop-Debug/scanner", ["scanner"])
