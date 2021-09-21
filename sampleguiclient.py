@@ -105,12 +105,10 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         self.log("Started")
 
-        signal.signal(signal.SIGTRAP, self.receiveSignal)
-
         self.product_passed_dt = datetime.now()
 
         date_time = datetime.now().strftime("%d.%m.%Y-%H:%M")
-        self.filename = 'ki_' + self.name_label.text() + '_' + date_time + '.txt'
+        self.ki_filename = 'ki_' + self.name_label.text() + '_' + date_time + '.txt'
 
         #-----------------Serial Port-----------------
         available_ports = QSerialPortInfo.availablePorts()
@@ -119,11 +117,10 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             print('port: ', port.portName())
 
         if len(available_ports) == 0:
+            self.log("Ошибка! Нет доступных ком портов!")
             raise IOError("No available com ports ERROR")
 
-        #port = "ttyS1"
-        # port = available_ports[0].portName()
-        port = available_ports[config.comport].portName()
+        port = available_ports[config.comport].portName()  # port = "ttyS1"
         self.serial = QSerialPort(self)
         self.serial.setPortName(port)
         if self.serial.open(QIODevice.ReadWrite):
@@ -135,15 +132,12 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         else:
             raise IOError("Cannot connect to device on port {}".format(port))
 
-
-        print('COM PORT connected INFO')
-
     def choose_file(self):
-        self.filename = QFileDialog.getOpenFileName()
-        print('self.filename: ', self.filename[0])
+        self.ki_filename = QFileDialog.getOpenFileName()
+        print('ki filename: ', self.ki_filename[0])
 
         count = 0
-        with open(self.filename[0], 'r') as f:
+        with open(self.ki_filename[0], 'r') as f:
             for line in f:
                 count += 1
 
@@ -170,7 +164,6 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             current_dt = datetime.now()
             duration = current_dt - self.product_passed_dt
             duration_in_ms = duration.total_seconds() * 1000
-
             print('duration_in_ms: ', duration_in_ms)
 
             if self.sensor_counter == self.scan_counter + self.defect_counter:
@@ -178,8 +171,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             else:
                 print('previously scanner read scan failed')
                 self.defect_counter = self.defect_counter + 1
-                self.serial.write(b'brak' + bytes('\n'.encode())) #self.serial.write(bytes([98, 114, 97, 107, 10]))  # brak/n
-
+                self.serial.write(b'brak' + bytes('\n'.encode()))  #  self.serial.write(bytes([98, 114, 97, 107, 10]))  # brak/n
         elif readbytes == b'ON\r\n':
             print('On processed')
         elif readbytes == b'OFF\r\n':
@@ -206,12 +198,12 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             return
 
         date_time = datetime.now().strftime("%d.%m.%Y")
-        self.filename = 'ki_' + self.name_label.text() + '_' + date_time + '.txt'
+        self.ki_filename = 'ki_' + self.name_label.text() + '_' + date_time + '.txt'
 
-        if not os.path.exists(self.filename):
-            os.mknod(self.filename)
+        if not os.path.exists(self.ki_filename):
+            os.mknod(self.ki_filename)
 
-        with open(self.filename) as f:
+        with open(self.ki_filename) as f:
             if scan in f.read():
                 print("дубликат!")
                 self.log('Дубликат! Будет отбраковано')
@@ -220,8 +212,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         print("Скан валидный")
         self.scan_counter = self.scan_counter + 1
 
-        with open(self.filename, "a") as myfile:
-            myfile.write(scan + "\n")
+        with open(self.ki_filename, "a") as ki_file:
+            ki_file.write(scan + "\n")
 
         line_number = self.line_number_combobox.currentText()
         self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 2, int(line_number), scan))
@@ -252,8 +244,6 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.client_reply_timer.start(100)
 
     def send_ready(self):
-        #self.serial.write(b'brak' + bytes('\n'.encode()))
-
         line_number = self.line_number_combobox.currentText()
         self.client.cmd_q.put(ClientCommand(ClientCommand.CONNECT, 1, int(line_number), SERVER_ADDR))
         self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 1, int(line_number)))
@@ -264,17 +254,17 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         line_number = self.line_number_combobox.currentText()
 
         date_time = datetime.now().strftime("%d.%m.%Y")
-        filename = 'ki_' + self.name_label.text() + '_' + date_time + '.txt'
-        print("Подготовка к отправке файла ", filename)
+        ki_filename = 'ki_' + self.name_label.text() + '_' + date_time + '.txt'
+        print("Подготовка к отправке файла ", ki_filename)
 
-        if not os.path.exists(filename):
+        if not os.path.exists(ki_filename):
             print("Файла нет!")
             return
 
-        with open(filename, "r") as myfile:
-            bytes = myfile.read()
-            print("Считаны данные из файла ", bytes)
-            self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 3, int(line_number), bytes))
+        with open(ki_filename, "r") as ki_file:
+            read_bytes = ki_file.read()
+            print("Считаны данные из файла ", read_bytes)
+            self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 3, int(line_number), read_bytes))
             #self.log('Файл отправлен')
 
     def on_client_reply_timer(self):
@@ -311,14 +301,6 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         timestamp = '[%010.3f]' % time.process_time()
         self.text_browser.append(timestamp + ' ' + str(msg))
 
-    def receiveSignal(self, signalNumber, frame):
-        print('Received:', signalNumber)
-        self.scanner_status_checkbox.setChecked(True)
-        self.scanner_status_checkbox.setEnabled(False)
-
-        palette = QPalette()
-        palette.setColor(QPalette.Base, QColor("#23F617"))
-        self.scanner_status_checkbox.setPalette(palette)
 
 def create_thrift_server(thrift_client, transport):
     processor = SlaveController.Processor(thrift_client)
@@ -335,16 +317,14 @@ def create_thrift_server(thrift_client, transport):
 if __name__ == "__main__":
     ret = os.fork()
     if ret == 0:
-        print('CHILD  scanner run pid        ', os.getpid())
-        print('CHILD  scanner run parent pid ', os.getppid())
         fd = os.open('scanner.log', os.O_CREAT | os.O_WRONLY | os.O_APPEND)
         os.dup2(fd, 1)
         os.dup2(fd, 2)
+        print('CHILD pid        ', os.getpid())
         os.execv("/home/avovana/build-scanner-Desktop-Debug/scanner", ["scanner"])
     elif ret > 0:
-        print('PARENT sample  run pid        ', os.getpid())
-        print('PARENT sample  run parent pid ', os.getppid())
-        print('PARENTs child                 ', ret)
+        print('PARENT pid       ', os.getpid())
+        print('PARENT parent pid', os.getppid())
         app = QApplication(sys.argv)
         mainwindow = SlaveGui()
         thrift_impl = ThriftImpl()
@@ -373,5 +353,4 @@ if __name__ == "__main__":
         mainwindow.close()
         print('mainwindow transport closed')
 
-    print('End pid        ', os.getpid())
-    print('End parent pid ', os.getppid())
+    print('Program finished')
