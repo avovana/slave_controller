@@ -315,14 +315,29 @@ def create_thrift_server(thrift_client, transport):
     print('thrift_server=done info')
 
 if __name__ == "__main__":
+    with open("interface.pid", "r") as pid_file:
+        pid = pid_file.read()
+        print("prev interface pid: ", pid)
+
+    with open("scanner.pid", "r") as pid_file:
+        pid = pid_file.read()
+        print("prev child pid: ", pid)
+
     ret = os.fork()
     if ret == 0:
+        with open("scanner.pid", "w") as child_pid:
+            child_pid.write(str(os.getpid()))
+
+        print('CHILD pid        ', os.getpid())
         fd = os.open('scanner.log', os.O_CREAT | os.O_WRONLY | os.O_APPEND)
         os.dup2(fd, 1)
         os.dup2(fd, 2)
-        print('CHILD pid        ', os.getpid())
+        print('pid ', os.getpid())
         os.execv("/home/avovana/build-scanner-Desktop-Debug/scanner", ["scanner"])
     elif ret > 0:
+        with open("interface.pid", "w") as interface_pid:
+            interface_pid.write(str(os.getpid()))
+
         print('PARENT pid       ', os.getpid())
         print('PARENT parent pid', os.getppid())
         app = QApplication(sys.argv)
