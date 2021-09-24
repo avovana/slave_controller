@@ -83,11 +83,13 @@ class SocketClientThread(threading.Thread):
 
     def _handle_CONNECT(self, cmd):
         try:
-            self.socket = socket.socket(
-                socket.AF_INET, socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.connect((cmd.data[0], cmd.data[1]))
+            self.socket.settimeout(2)
             self.reply_q.put(self._success_reply("Установлена связь"))
+            print("connect OK")
         except IOError as e:
+            print("connect FAILD")
             self.reply_q.put(self._error_reply(str(e)))
 
     def _handle_CLOSE(self, cmd):
@@ -140,7 +142,7 @@ class SocketClientThread(threading.Thread):
 
             self.reply_q.put(self._success_reply("Отправлен запрос"))
         except IOError as e:
-            self.reply_q.put(self._error_reply(str(e)))
+            self.reply_q.put(self._error_reply(str(e) + "11111"))
 
     def _handle_RECEIVE(self, cmd):
         print("Received:")
@@ -155,7 +157,11 @@ class SocketClientThread(threading.Thread):
 
             body_data = self._recv_n_bytes(msg_size)
 
-            self.reply_q.put(self._success_reply(body_data))
+            if body_data != b'':
+                self.reply_q.put(self._success_reply(body_data))
+            else:
+                self.reply_q.put(self._error_reply(str("Соединение закрылось")))
+
             return
 
             # print("type_data: ", type_data)
@@ -176,9 +182,8 @@ class SocketClientThread(threading.Thread):
 
             self.reply_q.put(self._error_reply('Socket closed prematurely'))
         except IOError as e:
-            print("error! ", str(e))
+            print("read IO error: ", str(e))
             self.reply_q.put(self._error_reply(str(e)))
-            sys.exit(1)
 
     def _recv_header(self):
         chunk = self.socket.recv(4)
@@ -198,25 +203,18 @@ class SocketClientThread(threading.Thread):
 
             try:
                 chunk = self.socket.recv(n - len(data))
-            except socket.error as e:
+            except socket.timeout as e:
                 err = e.args[0]
-                if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
-                    sleep(1)
-                    print('No data available')
-                    continue
-                else:
-                    # a "real" error occurred
-                    print("error: !-------------------- ", e)
-                    # sys.exit(1)
-            except IOError as e:
-                print("error!-------------------- ", str(e))
-                # sys.exit(1)
+                print("socket error timeout: ", err)
+            except socket.error as e:
+                print("socket error: ", e)
                 self.reply_q.put(self._error_reply(str(e)))
             else:
                 print("chunk: ", chunk)
                 if chunk == b'':
+                    print("разрыв соединения")
                     self.socket.close()
-                    self.reply_q.put(self._error_reply(str("Соединение закрылось")))
+                    data = b''
                     break
 
                 data += chunk

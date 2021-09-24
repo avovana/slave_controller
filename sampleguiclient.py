@@ -91,6 +91,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.client = SocketClientThread(self.tcp_thread_event)
         self.client.start()
 
+        self.connect_button.clicked.connect(self.send_connect)
         self.ready_button.clicked.connect(self.send_ready)
         self.finish_button.clicked.connect(self.send_file)
         self.choose_file_pushbutton.clicked.connect(self.choose_file)
@@ -243,9 +244,12 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.client_reply_timer.timeout.connect(self.on_client_reply_timer)
         self.client_reply_timer.start(100)
 
-    def send_ready(self):
+    def send_connect(self):
         line_number = self.line_number_combobox.currentText()
         self.client.cmd_q.put(ClientCommand(ClientCommand.CONNECT, 1, int(line_number), SERVER_ADDR))
+
+    def send_ready(self):
+        line_number = self.line_number_combobox.currentText()
         self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 1, int(line_number)))
         self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE))  # Wait info
         self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE))  # Wait start_signal
