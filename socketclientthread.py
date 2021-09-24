@@ -8,7 +8,10 @@ import socket
 import struct
 import threading
 import queue
-import linecache
+import sys
+
+import errno
+from time import sleep
 
 class ClientCommand(object):
     """ A command to the client thread.
@@ -81,7 +84,7 @@ class SocketClientThread(threading.Thread):
     def _handle_CONNECT(self, cmd):
         try:
             self.socket = socket.socket(
-                socket.AF_INET, socket.SOCK_STREAM)
+                socket.AF_INET, socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
             self.socket.connect((cmd.data[0], cmd.data[1]))
             self.reply_q.put(self._success_reply("Установлена связь"))
         except IOError as e:
@@ -175,8 +178,7 @@ class SocketClientThread(threading.Thread):
         except IOError as e:
             print("error! ", str(e))
             self.reply_q.put(self._error_reply(str(e)))
-
-
+            sys.exit(1)
 
     def _recv_header(self):
         chunk = self.socket.recv(4)
@@ -190,18 +192,37 @@ class SocketClientThread(threading.Thread):
             (assuming it's open and connected).
         """
         data = b''
-        while len(data) < n:
+        while len(data) < n and self.alive.isSet():
             print("len(data): ", len(data))
             print("n: ", n)
 
-            chunk = self.socket.recv(n - len(data))
-            print("chunk: ", chunk)
+            try:
+                chunk = self.socket.recv(n - len(data))
+            except socket.error as e:
+                err = e.args[0]
+                if err == errno.EAGAIN or err == errno.EWOULDBLOCK:
+                    sleep(1)
+                    print('No data available')
+                    continue
+                else:
+                    # a "real" error occurred
+                    print("error: !-------------------- ", e)
+                    # sys.exit(1)
+            except IOError as e:
+                print("error!-------------------- ", str(e))
+                # sys.exit(1)
+                self.reply_q.put(self._error_reply(str(e)))
+            else:
+                print("chunk: ", chunk)
+                if chunk == b'':
+                    self.socket.close()
+                    self.reply_q.put(self._error_reply(str("Соединение закрылось")))
+                    break
 
-            if chunk == '':
-                break
-            data += chunk
-            print("data: ", data)
-            print("len(data): ", len(data))
+                data += chunk
+                print("data: ", data)
+                print("len(data): ", len(data))
+
         return data
 
     def _error_reply(self, errstr):
