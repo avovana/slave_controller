@@ -39,7 +39,7 @@ class ClientReply(object):
         SUCCESS:    Depends on the command - for RECEIVE it's the received
                     data string, for others None.
     """
-    ERROR, SUCCESS = range(2)
+    ERROR, SUCCESS, CONNECTED = range(3)
 
     def __init__(self, type, data=None):
         self.type = type
@@ -86,7 +86,7 @@ class SocketClientThread(threading.Thread):
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.connect((cmd.data[0], cmd.data[1]))
             self.socket.settimeout(2)
-            self.reply_q.put(self._success_reply("Установлена связь"))
+            self.reply_q.put(self._success_connected())
             print("connect OK")
         except IOError as e:
             print("connect FAILD")
@@ -156,6 +156,8 @@ class SocketClientThread(threading.Thread):
             print("msg_size: ", msg_size)
 
             body_data = self._recv_n_bytes(msg_size)
+
+            print("type 1: ", type(body_data))
 
             if body_data != b'':
                 self.reply_q.put(self._success_reply(body_data))
@@ -227,7 +229,11 @@ class SocketClientThread(threading.Thread):
         return ClientReply(ClientReply.ERROR, errstr)
 
     def _success_reply(self, data=None):
+        print("type: 2", type(data))
         return ClientReply(ClientReply.SUCCESS, data)
+
+    def _success_connected(self, data=None):
+        return ClientReply(ClientReply.CONNECTED, data)
 
 
 #------------------------------------------------------------------------------

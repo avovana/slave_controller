@@ -274,23 +274,39 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
     def on_client_reply_timer(self):
         try:
             reply = self.client.reply_q.get(block=False)
-            status = "УСПЕШНО" if reply.type == ClientReply.SUCCESS else "ОШИБКА"
-            #  "Получены данные: " + body_data.decode('utf-8')
-            self.log('%s: %s' % (status, reply.data))
-            # print("   reply.type:", reply.type)
-            # print("   reply.data:", reply.data)
 
-            if reply.data is None:
+            if reply.type == ClientReply.CONNECTED:
+                self.log('Установлена связь')
+                return
+            elif reply.type == ClientReply.ERROR:
+                self.log("ОШИБКА: %s" % reply.data)
                 return
 
-            msg_type = int.from_bytes(reply.data[0:4], byteorder='big', signed=False)
+            self.log("УСПЕШНО: %s" % reply.data)
+
+            #if reply.data is None:
+            #    return
+
+            print("type: 3", type(reply.data))
+            # first4bytes = b'\x00\x00\x00\x04'  #  reply.data[0:4]
+            first4bytes = reply.data[0:4]
+
+            print("type: 4", type(first4bytes))
+            msg_type = int.from_bytes(first4bytes, byteorder='big', signed=False)
+            print("msg_type", msg_type)
+            print("msg_type", type(msg_type))
+            print("type: 5", type(reply.data))
+            print("type: 6", type(reply.data))
+            print("type: 7", type(reply.data[4:len(reply.data)]))
+            print("type: 8", type(reply.data[4:len(reply.data)].decode())) # м.б. я делаю операцию по ссылке? а думал, что по копии
             # print("msg_type: ", msg_type)
             # print("reply.data: ", reply.data)
             # print("len(reply.data): ", len(reply.data))
             # print("reply.data[4:len(reply.data) - 4 - 1]: ", reply.data[4:len(reply.data)])
             # print("len(reply.data[4:len(reply.data) - 4 - 1]): ", len(reply.data[4:len(reply.data)]))
             body = reply.data[4:len(reply.data)].decode()
-            # print("body: ", body)
+            print("body ", type(body))
+            print("body: ", body)
 
             if msg_type == 4:
                 name, plan = body.split(",")
