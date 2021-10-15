@@ -104,12 +104,10 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.scan_counter = 0
         self.defect_counter = 0
 
+        self.ki_filename = ""
         self.log("Started")
 
         self.product_passed_dt = datetime.now()
-
-        date_time = datetime.now().strftime("%d.%m.%Y-%H:%M")
-        self.ki_filename = 'ki_' + self.name_label.text() + '_' + date_time + '.txt'
 
         #-----------------Serial Port-----------------
         available_ports = QSerialPortInfo.availablePorts()
@@ -134,11 +132,14 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             raise IOError("Cannot connect to device on port {}".format(port))
 
     def choose_file(self):
-        self.ki_filename = QFileDialog.getOpenFileName()
-        print('ki filename: ', self.ki_filename[0])
+        ki_filename_dialog = QFileDialog.getOpenFileName()
+        self.ki_filename = ki_filename_dialog[0]
+        print('ki filename: ', self.ki_filename)
+
+        self.log("Файл для сканов: %s" % self.ki_filename)
 
         count = 0
-        with open(self.ki_filename[0], 'r') as f:
+        with open(self.ki_filename, 'r') as f:
             for line in f:
                 count += 1
 
@@ -198,9 +199,6 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             self.log('Нет символа GS! Будет отбраковано')
             return
 
-        date_time = datetime.now().strftime("%d.%m.%Y")
-        self.ki_filename = 'ki_' + self.name_label.text() + '_' + date_time + '.txt'
-
         if not os.path.exists(self.ki_filename):
             os.mknod(self.ki_filename)
 
@@ -216,10 +214,12 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         with open(self.ki_filename, "a") as ki_file:
             ki_file.write(scan + "\n")
 
-        line_number = self.line_number_combobox.currentText()
-        self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 2, int(line_number), scan))
         self.log('Скан записан в файл. Подготовлен для отправки')
         self.current_label.setText(str(self.scan_counter))
+
+        line_number = self.line_number_combobox.currentText()
+        self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 2, int(line_number), self.current_label.text()))
+        print("Отправлено оповещение об инкременте скана")
 
     def scanner_status(self, status):
         if status == ScannerStatus.Ready:
@@ -252,24 +252,22 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         line_number = self.line_number_combobox.currentText()
         self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 1, int(line_number)))
         self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE))  # Wait info
-        self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE))  # Wait start_signal
 
     def send_file(self):
         line_number = self.line_number_combobox.currentText()
 
         date_time = datetime.now().strftime("%d.%m.%Y")
-        ki_filename = 'ki_' + self.name_label.text() + '_' + date_time + '.txt'
-        print("Подготовка к отправке файла ", ki_filename)
+        print("Подготовка к отправке файла ", self.ki_filename)
 
-        if not os.path.exists(ki_filename):
+        if not os.path.exists(self.ki_filename):
             print("Файла нет!")
             return
 
-        with open(ki_filename, "r") as ki_file:
+        with open(self.ki_filename, "r") as ki_file:
             read_bytes = ki_file.read()
             print("Считаны данные из файла ", read_bytes)
             self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 3, int(line_number), read_bytes))
-            #self.log('Файл отправлен')
+            self.log('Файл отправляется')
 
     def on_client_reply_timer(self):
         try:
@@ -311,9 +309,16 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             if msg_type == 4:
                 name, plan = body.split(",")
                 self.name_label.setText(name)
+                date_time = datetime.now().strftime("%d.%m.%Y")
+                self.ki_filename = 'ki_' + self.name_label.text() + '_' + date_time + '.txt'
+                self.log('Файл для сканов: %s' % self.ki_filename)
                 self.plan_label.setText(plan)
+                self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE))  # Wait start_signal
+                self.log('Ожидание стартового сигнала...')
             elif msg_type == 6:
                 self.log('Можно начинать')
+            elif msg_type == 8:
+                self.log('Линия еще не описана')
         except queue.Empty:
             pass
 
