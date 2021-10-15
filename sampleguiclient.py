@@ -1,22 +1,20 @@
 #!/usr/bin/python
 """
+based on:
 Sample GUI using SocketClientThread for socket communication, while doing other
 stuff in parallel.
 
 Eli Bendersky (eliben@gmail.com)
 This code is in the public domain
 """
-import os, sys, time
+import os
 import queue
 import design
-import re
 
 from datetime import datetime
 from threading import Thread
 import threading
 
-import linecache
-import signal
 import time
 
 from PyQt5.QtCore import *
@@ -95,6 +93,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.ready_button.clicked.connect(self.send_ready)
         self.finish_button.clicked.connect(self.send_file)
         self.choose_file_pushbutton.clicked.connect(self.choose_file)
+        self.correct_file_button.clicked.connect(self.correct_file)
 
         self.scanner_status_checkbox.setEnabled(False)
 
@@ -103,6 +102,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.sensor_counter = 0
         self.scan_counter = 0
         self.defect_counter = 0
+
+        self.correct_file = False
 
         self.ki_filename = ""
         self.log("Started")
@@ -147,6 +148,16 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.sensor_counter = count
         self.current_label.setText(str(self.scan_counter))
 
+    def correct_file(self):
+        if not self.correct_file:
+            self.correct_file = True
+            self.log('Режим корректировки включен')
+            self.correct_file_button.setStyleSheet("background-color: green")
+        else:
+            self.correct_file = False
+            self.correct_file_button.setStyleSheet("background-color: rgb(141, 255, 255)")
+            self.log('Режим корректировки выключен')
+
     def on_serial_read(self):
         print('sensor_counter=', self.sensor_counter)
         print('scan_counter=  ', self.scan_counter)
@@ -182,6 +193,23 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
     def scan(self, scan):
         scan_len = len(scan)
         print('scan : ', scan)
+
+        if self.correct_file:
+            lines = []
+            with open(self.ki_filename) as f:
+                lines = f.readlines()
+
+            print('lines : ', lines)
+            lines.remove(scan + "\n")
+
+            with open(self.ki_filename, 'w') as f:
+                for line in lines:
+                    f.write(line)
+
+            self.scan_counter = self.scan_counter - 1
+            self.current_label.setText(str(self.scan_counter))
+
+            return
 
         self.product_passed_dt = datetime.now()
         print('product_passed_dt: ', self.product_passed_dt)

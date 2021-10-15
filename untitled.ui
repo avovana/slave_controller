@@ -18,6 +18,27 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
+    <item row="2" column="0" colspan="5">
+     <widget class="QPushButton" name="connect_button">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string>Подключиться</string>
+      </property>
+     </widget>
+    </item>
     <item row="0" column="0" colspan="2">
      <widget class="QCheckBox" name="scanner_status_checkbox">
       <property name="enabled">
@@ -41,6 +62,17 @@
     </item>
     <item row="5" column="4">
      <widget class="QLabel" name="current_label">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>64</pointsize>
+       </font>
+      </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
@@ -91,7 +123,7 @@
       </property>
      </widget>
     </item>
-    <item row="6" column="0" colspan="5">
+    <item row="7" column="0" colspan="5">
      <widget class="QPushButton" name="finish_button">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
@@ -114,6 +146,17 @@
     </item>
     <item row="5" column="0" colspan="3">
      <widget class="QLabel" name="name_label">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>64</pointsize>
+       </font>
+      </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
@@ -176,7 +219,7 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="7" rowspan="7">
+    <item row="0" column="7" rowspan="8">
      <widget class="QTextBrowser" name="text_browser">
       <property name="palette">
        <palette>
@@ -686,6 +729,17 @@
     </item>
     <item row="5" column="3">
      <widget class="QLabel" name="plan_label">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>64</pointsize>
+       </font>
+      </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
@@ -742,8 +796,8 @@
       </property>
      </widget>
     </item>
-    <item row="2" column="0" colspan="5">
-     <widget class="QPushButton" name="connect_button">
+    <item row="6" column="0" colspan="5">
+     <widget class="QPushButton" name="correct_file_button">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
         <horstretch>0</horstretch>
@@ -759,7 +813,7 @@
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
       <property name="text">
-       <string>Подключиться</string>
+       <string>Корректировка</string>
       </property>
      </widget>
     </item>
