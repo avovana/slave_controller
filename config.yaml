@@ -2,3 +2,4 @@ comport: 1
 server: 
     host: localhost
     port: 6000
+scanner_path: /home/avovana/build-scanner-Desktop-Debug/scanner

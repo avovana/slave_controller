@@ -48,10 +48,12 @@ class Config:
         self.comport = self.config['comport']
         self.host = self.config['server']['host']
         self.port = self.config['server']['port']
+        self.scanner_path = self.config['scanner_path']
 
         print("self.comport: ", self.comport)
         print("self.host: ", self.host)
         print("self.port: ", self.port)
+        print("self.scanner_path: ", self.scanner_path)
 
 
 config = Config()
@@ -337,7 +339,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             if msg_type == 4:
                 name, plan = body.split(",")
                 self.name_label.setText(name)
-                date_time = datetime.now().strftime("%d.%m.%Y")
+                date_time = datetime.now().strftime("%d.%m.%Y-%H:%M")
                 self.ki_filename = 'ki_' + self.name_label.text() + '_' + date_time + '.txt'
                 self.log('Файл для сканов: %s' % self.ki_filename)
                 self.plan_label.setText(plan)
@@ -386,7 +388,7 @@ if __name__ == "__main__":
         os.dup2(fd, 1)
         os.dup2(fd, 2)
         print('pid ', os.getpid())
-        os.execv("/home/avovana/build-scanner-Desktop-Debug/scanner", ["scanner"])
+        os.execv(config.scanner_path, ["scanner"])
     elif ret > 0:
         with open("interface.pid", "w") as interface_pid:
             interface_pid.write(str(os.getpid()))
