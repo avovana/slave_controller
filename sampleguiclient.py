@@ -120,7 +120,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         if len(available_ports) == 0:
             self.log("Ошибка! Нет доступных ком портов!")
-            raise IOError("No available com ports ERROR")
+            QMessageBox.error(self, "Comport", "Не найден")
+            return
 
         port = available_ports[config.comport].portName()  # port = "ttyS1"
         self.serial = QSerialPort(self)
