@@ -154,7 +154,7 @@
       </property>
       <property name="font">
        <font>
-        <pointsize>64</pointsize>
+        <pointsize>20</pointsize>
        </font>
       </property>
       <property name="styleSheet">
