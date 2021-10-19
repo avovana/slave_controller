@@ -49,6 +49,7 @@ class Config:
         self.host = self.config['server']['host']
         self.port = self.config['server']['port']
         self.scanner_path = self.config['scanner_path']
+        self.line_number = self.config['line_number']
 
         print("self.comport: ", self.comport)
         print("self.host: ", self.host)
@@ -83,6 +84,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         super().__init__()
 
         self.setupUi(self)
+
         self.showMaximized()
 
         self.tcp_thread_event = threading.Event()
@@ -122,6 +124,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             self.log("Ошибка! Нет доступных ком портов!")
             QMessageBox.error(self, "Comport", "Не найден")
             return
+        self.line_number_combobox.setItemText(0, str(config.line_number))
+        self.line_number_combobox.setEnabled(False)
 
         port = available_ports[config.comport].portName()  # port = "ttyS1"
         self.serial = QSerialPort(self)
