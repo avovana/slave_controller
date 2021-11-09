@@ -245,6 +245,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         print("Скан валидный")
         self.scan_counter = self.scan_counter + 1
+        self.serial.write(b'good' + bytes('\n'.encode()))
 
         with open(self.ki_filename, "a") as ki_file:
             ki_file.write(scan + "\n")
