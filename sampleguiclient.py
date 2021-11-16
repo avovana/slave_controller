@@ -98,6 +98,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.finish_button.clicked.connect(self.send_file)
         self.choose_file_pushbutton.clicked.connect(self.choose_file)
         self.correct_file_button.clicked.connect(self.correct_file)
+        self.name_combobox.currentTextChanged.connect(self.name_text_changed)
 
         self.scanner_status_checkbox.setEnabled(False)
 
@@ -113,6 +114,18 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.log("Started")
 
         self.product_passed_dt = datetime.now()
+
+        self.tasks = {}
+
+        # body = "1,prod1,20;2,prod2,30"
+        #
+        # tasks = body.split(";")
+        #
+        # for idx, value in enumerate(tasks):
+        #     task, name, plan = value.split(",")
+        #     self.tasks[task] = (name, plan)
+        #
+        # self.log(tasks)
 
         #-----------------Serial Port-----------------
         available_ports = QSerialPortInfo.availablePorts()
@@ -138,6 +151,12 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             #self.serial.write(b'Start' + bytes('\n'.encode()))
         else:
             raise IOError("Cannot connect to device on port {}".format(port))
+
+    def name_text_changed(self, str):
+        print('str: ', str)
+        plan, task = self.tasks.get(str)
+        print('plan: ', plan)
+        print('task: ', task)
 
     def choose_file(self):
         ki_filename_dialog = QFileDialog.getOpenFileName()
@@ -253,8 +272,10 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.log('Скан записан в файл. Подготовлен для отправки')
         self.current_label.setText(str(self.scan_counter))
 
+        #task_number = 3
+
         line_number = self.line_number_combobox.currentText()
-        self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 2, int(line_number), self.current_label.text()))
+        self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 2, int(line_number), self.current_label.text(), task_number))#)
         print("Отправлено оповещение об инкременте скана")
 
     def scanner_status(self, status):
@@ -343,7 +364,16 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             print("body: ", body)
 
             if msg_type == 4:
-                name, plan = body.split(",")
+                tasks = body.split(";")
+
+                for idx, value in enumerate(tasks):
+                    task, name, plan = value.split(",")
+                    self.tasks[name] = (task, plan)
+                    print("name: ", name)
+                    print("task: ", task)
+                    print("plan: ", plan)
+                    self.name_combobox.addItem(name)
+
                 self.name_label.setText(name)
                 date_time = datetime.now().strftime("%d.%m.%Y-%H:%M")
                 self.ki_filename = 'ki_' + self.name_label.text() + '_' + date_time + '.txt'
@@ -354,7 +384,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             elif msg_type == 6:
                 self.log('Можно начинать')
             elif msg_type == 8:
-                self.log('Линия еще не описана')
+                self.log('Задачи еще не созданы')
         except queue.Empty:
             pass
 

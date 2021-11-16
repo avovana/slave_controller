@@ -24,10 +24,13 @@ class ClientCommand(object):
     """
     CONNECT, SEND, RECEIVE, CLOSE = range(4)
 
-    def __init__(self, type, msg_type=None, line_number=None, data=None):
+    def __init__(self, type, msg_type=None, line_number=None, data=None, task=None):
         self.type = type
         self.msg_type = msg_type
         self.line_number = line_number
+        print("task is ", task)
+        self.task = 0 if task is None else task
+        print("self.task is ", self.task)
         self.data = data
 
 
@@ -120,6 +123,11 @@ class SocketClientThread(threading.Thread):
         print("cmd.line_number: ", cmd.line_number)
         print("format(cmd.line_number).encode(): ", format(cmd.line_number).encode())
         print("struct.pack('>b', cmd.line_number): ", struct.pack('>b', cmd.line_number))
+
+        print("cmd.task: ", cmd.task)
+        print("format(cmd.task).encode(): ", format(cmd.task).encode())
+        print("struct.pack('>b', cmd.task): ", struct.pack('>b', cmd.task))
+
         #line_number = cmd.data[1]
         #print("line_number: ", line_number)
         #print("format(line_number).encode(): ", format(line_number).encode())
@@ -129,16 +137,18 @@ class SocketClientThread(threading.Thread):
         # scan3 = linecache.getline('/home/avovana/slave_controller/scans.txt', 3)
         # print("scan.encode(): ", scan.encode() + scan2.encode() + scan3.encode())
         # self.socket.sendall(scan.encode() + scan2.encode() + scan3.encode())
-        header = struct.pack('>L', 2)
+        header = struct.pack('>L', 3)
+
+        task = 0
         if cmd.data is not None:
             print("len(cmd.data): ", len(cmd.data))
-            header = struct.pack('>L', 2 + len(cmd.data))
+            header = struct.pack('>L', 3 + len(cmd.data))
         try:
             #self.socket.sendall(header + format(msg_type).encode() + format(line_number).encode())
             if cmd.data is None:
-                self.socket.sendall(header + struct.pack('>b', cmd.msg_type) + struct.pack('>b', cmd.line_number))
+                self.socket.sendall(header + struct.pack('>b', cmd.msg_type) + struct.pack('>b', cmd.line_number) + struct.pack('>b', cmd.task))
             else:
-                self.socket.sendall(header + struct.pack('>b', cmd.msg_type) + struct.pack('>b', cmd.line_number) + cmd.data.encode())
+                self.socket.sendall(header + struct.pack('>b', cmd.msg_type) + struct.pack('>b', cmd.line_number) + struct.pack('>b', cmd.task) + cmd.data.encode())
 
             self.reply_q.put(self._success_reply("Отправлен запрос"))
         except IOError as e:
