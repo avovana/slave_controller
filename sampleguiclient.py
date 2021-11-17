@@ -97,8 +97,10 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.ready_button.clicked.connect(self.send_ready)
         self.finish_button.clicked.connect(self.send_file)
         self.choose_file_pushbutton.clicked.connect(self.choose_file)
+        #self.choose_file_pushbutton.clicked.connect(self.send_scan_test)
         self.correct_file_button.clicked.connect(self.correct_file)
         self.name_combobox.currentTextChanged.connect(self.name_text_changed)
+        self.choose_file_pushbutton.hide()
 
         self.scanner_status_checkbox.setEnabled(False)
 
@@ -173,6 +175,10 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.scan_counter = count
         self.sensor_counter = count
         self.current_label.setText(str(self.scan_counter))
+
+    def send_scan_test(self):
+        scan = "0104629418600327215/lfI,933yJ9"
+        self.scan(scan)
 
     def correct_file(self):
         if not self.correct_file:
@@ -272,10 +278,13 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.log('Скан записан в файл. Подготовлен для отправки')
         self.current_label.setText(str(self.scan_counter))
 
-        #task_number = 3
+        product = self.name_combobox.currentText()
+        task, plan = self.tasks.get(product)
+        print("current name: ", product)
+        print("task: ", task)
 
         line_number = self.line_number_combobox.currentText()
-        self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 2, int(line_number), self.current_label.text(), task_number))#)
+        self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 2, int(line_number), self.current_label.text(), int(task)))
         print("Отправлено оповещение об инкременте скана")
 
     def scanner_status(self, status):
@@ -313,6 +322,11 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
     def send_file(self):
         line_number = self.line_number_combobox.currentText()
 
+        product = self.name_combobox.currentText()
+        task, plan = self.tasks.get(product)
+        print("current name: ", product)
+        print("task: ", task)
+
         date_time = datetime.now().strftime("%d.%m.%Y")
         print("Подготовка к отправке файла ", self.ki_filename)
 
@@ -323,7 +337,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         with open(self.ki_filename, "r") as ki_file:
             read_bytes = ki_file.read()
             print("Считаны данные из файла ", read_bytes)
-            self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 3, int(line_number), read_bytes))
+            self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 3, int(line_number), read_bytes, int(task)))
             self.log('Файл отправляется')
 
     def on_client_reply_timer(self):
@@ -364,19 +378,27 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             print("body: ", body)
 
             if msg_type == 4:
-                tasks = body.split(";")
+                tasks = body.split(";")[0]
+                print("tasks: ", tasks)
 
-                for idx, value in enumerate(tasks):
-                    task, name, plan = value.split(",")
-                    self.tasks[name] = (task, plan)
-                    print("name: ", name)
-                    print("task: ", task)
-                    print("plan: ", plan)
-                    self.name_combobox.addItem(name)
+                task, name, plan = tasks.split(",")
+                self.tasks[name] = (task, plan)
+                # for idx, value in enumerate(tasks):
+                #     task, name, plan = value.split(",")
+                #     self.tasks[name] = (task, plan)
+                #     print("name: ", name)
+                #     print("task: ", task)
+                #     print("plan: ", plan)
+                #     self.name_combobox.addItem(name)
 
-                self.name_label.setText(name)
+                # plan, task = self.tasks.get(str)
+                print('plan: ', plan)
+                print('task: ', task)
+                print('name: ', name)
+
+                self.name_combobox.addItem(name)
                 date_time = datetime.now().strftime("%d.%m.%Y-%H:%M")
-                self.ki_filename = 'ki_' + self.name_label.text() + '_' + date_time + '.txt'
+                self.ki_filename = 'ki_' + self.name_combobox.currentText() + '_' + date_time + '.txt'
                 self.log('Файл для сканов: %s' % self.ki_filename)
                 self.plan_label.setText(plan)
                 self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE))  # Wait start_signal

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>608</width>
-    <height>406</height>
+    <width>612</width>
+    <height>411</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -757,14 +757,14 @@
     <item row="5" column="0" colspan="3">
      <widget class="QComboBox" name="name_combobox">
       <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
       <property name="font">
        <font>
-        <pointsize>64</pointsize>
+        <pointsize>26</pointsize>
        </font>
       </property>
       <property name="styleSheet">
@@ -779,7 +779,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>608</width>
+     <width>612</width>
      <height>22</height>
     </rect>
    </property>

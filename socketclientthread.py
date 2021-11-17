@@ -139,7 +139,6 @@ class SocketClientThread(threading.Thread):
         # self.socket.sendall(scan.encode() + scan2.encode() + scan3.encode())
         header = struct.pack('>L', 3)
 
-        task = 0
         if cmd.data is not None:
             print("len(cmd.data): ", len(cmd.data))
             header = struct.pack('>L', 3 + len(cmd.data))
