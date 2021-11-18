@@ -137,7 +137,17 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         if len(available_ports) == 0:
             self.log("Ошибка! Нет доступных ком портов!")
-            QMessageBox.error(self, "Comport", "Не найден")
+
+            msgBox = QMessageBox()
+            msgBox.setIcon(QMessageBox.Information)
+            msgBox.setText("Нет доступных ком портов!")
+            msgBox.setWindowTitle("Предупреждение")
+            msgBox.setStandardButtons(QMessageBox.Ok)
+
+            returnValue = msgBox.exec()
+            if returnValue == QMessageBox.Ok:
+                print('OK clicked')
+
             return
         self.line_number_combobox.setItemText(0, str(config.line_number))
         self.line_number_combobox.setEnabled(False)
