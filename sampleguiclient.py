@@ -100,6 +100,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         #self.choose_file_pushbutton.clicked.connect(self.send_scan_test)
         self.correct_file_button.clicked.connect(self.correct_file)
         self.name_combobox.currentTextChanged.connect(self.name_text_changed)
+        self.exit_button.clicked.connect(self.exit)
         self.choose_file_pushbutton.hide()
 
         self.scanner_status_checkbox.setEnabled(False)
@@ -163,6 +164,10 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             #self.serial.write(b'Start' + bytes('\n'.encode()))
         else:
             raise IOError("Cannot connect to device on port {}".format(port))
+
+    def exit(self):
+        print('in exit')
+        self.close()
 
     def name_text_changed(self, str):
         print('str: ', str)
