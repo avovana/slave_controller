@@ -169,6 +169,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
     def exit(self):
         print('in exit')
+        self.exit_button.setStyleSheet("background-color: green")
         self.close()
 
     def name_text_changed(self, str):
