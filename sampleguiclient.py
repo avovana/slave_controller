@@ -502,3 +502,4 @@ if __name__ == "__main__":
         print('mainwindow transport closed')
 
     print('Program finished')
+    os.system("shutdown now -h")
