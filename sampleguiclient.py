@@ -112,6 +112,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.defect_counter = 0
 
         self.correct_file = False
+        # self.connect_flag = False
+        # self.send_ready_flag = False
 
         self.ki_filename = ""
         self.log("Started")
@@ -326,15 +328,18 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.client_reply_timer.start(100)
 
     def send_connect(self):
+        self.connect_button.setStyleSheet("background-color: green")
         line_number = self.line_number_combobox.currentText()
         self.client.cmd_q.put(ClientCommand(ClientCommand.CONNECT, 1, int(line_number), SERVER_ADDR))
 
     def send_ready(self):
+        self.ready_button.setStyleSheet("background-color: green")
         line_number = self.line_number_combobox.currentText()
         self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 1, int(line_number)))
         self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE))  # Wait info
 
     def send_file(self):
+        self.finish_button.setStyleSheet("background-color: green")
         line_number = self.line_number_combobox.currentText()
 
         product = self.name_combobox.currentText()
