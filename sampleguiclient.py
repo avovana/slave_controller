@@ -101,7 +101,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.correct_file_button.clicked.connect(self.correct_file)
         self.name_combobox.currentTextChanged.connect(self.name_text_changed)
         self.exit_button.clicked.connect(self.exit)
-        self.choose_file_pushbutton.hide()
+        # self.choose_file_pushbutton.hide()
 
         self.scanner_status_checkbox.setEnabled(False)
 
@@ -419,7 +419,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
                 self.name_combobox.addItem(name)
                 date_time = datetime.now().strftime("%d.%m.%Y-%H:%M")
-                self.ki_filename = 'ki_' + self.name_combobox.currentText() + '_' + date_time + '.txt'
+                self.ki_filename = self.ki_filename if self.ki_filename != "" else 'ki_' + self.name_combobox.currentText() + '_' + date_time + '.txt'
                 self.log('Файл для сканов: %s' % self.ki_filename)
                 self.plan_label.setText(plan)
                 self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE))  # Wait start_signal
@@ -503,4 +503,4 @@ if __name__ == "__main__":
         print('mainwindow transport closed')
 
     print('Program finished')
-    os.system("shutdown now -h")
+    # os.system("shutdown now -h")
