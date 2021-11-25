@@ -67,6 +67,24 @@ class LogWidget(QTextBrowser):
         palette.setColor(QPalette.Base, QColor("#ddddfd"))
         self.setPalette(palette)
 
+
+class XMLparser:
+    def __init__(self):
+        self.root_node = ET.parse('/home/vova/build-master_labeling/positions.xml').getroot()
+
+    def get_rus_name(self, eng_name):
+        for tag in self.root_node.findall('input/position'):
+            if eng_name == tag.attrib['name_english']:
+                print("name rus: ", tag.attrib['name'])
+                return tag.attrib['name']
+
+    def get_eng_name(self, rus_name):
+        for tag in self.root_node.findall('input/position'):
+            if rus_name == tag.attrib['name']:
+                print("name eng: ", tag.attrib['name_english'])
+                return tag.attrib['name_english']
+
+
 class ThriftImpl(QObject):
     scan_signal = pyqtSignal(str)
     scanner_state_signal = pyqtSignal(int)
@@ -86,6 +104,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.setupUi(self)
 
         self.showMaximized()
+
+        self.xml_parser = XMLparser()
 
         self.tcp_thread_event = threading.Event()
         self.tcp_thread_event.set()
@@ -298,14 +318,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         name_rus = self.name_combobox.currentText()
         print("current name_rus: ", name_rus)
-        name_eng = ""
-
-        root_node = ET.parse('/home/vova/build-master_labeling/positions.xml').getroot()
-        for tag in root_node.findall('input/position'):
-            if name_rus == tag.attrib['name']:
-                print("name eng: ", tag.attrib['name_english'])
-                name_eng = tag.attrib['name_english']
-
+        name_eng = self.xml_parser.get_eng_name(name_rus)
 
         task, plan = self.tasks.get(name_eng)
         print("current name: ", name_eng)
@@ -354,14 +367,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         line_number = self.line_number_combobox.currentText()
 
         name_rus = self.name_combobox.currentText()
-        name_eng = ""
+        name_eng = self.xml_parser.get_eng_name(name_rus)
         print("current name_rus: ", name_rus)
-
-        root_node = ET.parse('/home/vova/build-master_labeling/positions.xml').getroot()
-        for tag in root_node.findall('input/position'):
-            if name_rus == tag.attrib['name']:
-                print("name eng: ", tag.attrib['name_english'])
-                name_eng = tag.attrib['name_english']
 
         task, plan = self.tasks.get(name_eng)
         print("task: ", task)
@@ -421,8 +428,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                 tasks = body.split(";")[0]
                 print("tasks: ", tasks)
 
-                task, name, plan = tasks.split(":")
-                self.tasks[name] = (task, plan)
+                task, eng_name, plan = tasks.split(":")
+                self.tasks[eng_name] = (task, plan)
                 # for idx, value in enumerate(tasks):
                 #     task, name, plan = value.split(",")
                 #     self.tasks[name] = (task, plan)
@@ -434,15 +441,12 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                 # plan, task = self.tasks.get(str)
                 print('plan: ', plan)
                 print('task: ', task)
-                print('name: ', name)
+                print('name: ', eng_name)
 
-                root_node = ET.parse('/home/vova/build-master_labeling/positions.xml').getroot()
-                for tag in root_node.findall('input/position'):
-                    if name == tag.attrib['name_english']:
-                        self.name_combobox.addItem(tag.attrib['name'])
+                self.name_combobox.addItem(self.xml_parser.get_rus_name(eng_name))
 
                 date_time = datetime.now().strftime("%d.%m.%Y-%H:%M")
-                self.ki_filename = self.ki_filename if self.ki_filename != "" else 'ki__' + name + '__' + date_time + '.txt'
+                self.ki_filename = self.ki_filename if self.ki_filename != "" else 'ki__' + eng_name + '__' + date_time + '.txt'
                 self.log('Файл для сканов: %s' % self.ki_filename)
                 self.plan_label.setText(plan)
                 self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE))  # Wait start_signal
