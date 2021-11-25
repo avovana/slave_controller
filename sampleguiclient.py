@@ -142,6 +142,9 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         self.tasks = {}
 
+        self.line_number_combobox.setItemText(0, str(config.line_number))
+        self.line_number_combobox.setEnabled(False)
+
         # body = "1,prod1,20;2,prod2,30"
         #
         # tasks = body.split(";")
@@ -172,8 +175,6 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                 print('OK clicked')
 
             return
-        self.line_number_combobox.setItemText(0, str(config.line_number))
-        self.line_number_combobox.setEnabled(False)
 
         port = available_ports[config.comport].portName()  # port = "ttyS1"
         self.serial = QSerialPort(self)
