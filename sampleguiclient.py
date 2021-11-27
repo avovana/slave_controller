@@ -49,12 +49,14 @@ class Config:
         self.host = self.config['server']['host']
         self.port = self.config['server']['port']
         self.scanner_path = self.config['scanner_path']
+        self.position_path = self.config['position_path']
         self.line_number = self.config['line_number']
 
         print("self.comport: ", self.comport)
         print("self.host: ", self.host)
         print("self.port: ", self.port)
         print("self.scanner_path: ", self.scanner_path)
+        print("self.position_path: ", self.position_path)
 
 
 config = Config()
@@ -70,7 +72,7 @@ class LogWidget(QTextBrowser):
 
 class XMLparser:
     def __init__(self):
-        self.root_node = ET.parse('/home/vova/build-master_labeling/positions.xml').getroot()
+        self.root_node = ET.parse(config.position_path).getroot()
 
     def get_rus_name(self, eng_name):
         for tag in self.root_node.findall('input/position'):
