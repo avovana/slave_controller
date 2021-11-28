@@ -1,6 +1,7 @@
 comport: 0
-server: 
+server:
     host: localhost
     port: 6000
-scanner_path: /home/avovana/build-scanner-Desktop-Debug/scanner
+scanner_path: /home/vova/slave_controller/scanner
+position_path: /home/vova/build-master_labeling/positions.xml
 line_number: 1
