@@ -282,6 +282,18 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             self.scan_counter = self.scan_counter - 1
             self.current_label.setText(str(self.scan_counter))
 
+            name_rus = self.name_combobox.currentText()
+            print("current name_rus: ", name_rus)
+            name_eng = self.xml_parser.get_eng_name(name_rus)
+
+            task, plan = self.tasks.get(name_eng)
+            print("current name: ", name_eng)
+            print("task: ", task)
+
+            line_number = self.line_number_combobox.currentText()
+            self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 2, int(line_number), self.current_label.text(), int(task)))
+            print("Отправлено оповещение об корректировки")
+
             return
 
         self.product_passed_dt = datetime.now()
