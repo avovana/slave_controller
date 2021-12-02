@@ -132,6 +132,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.sensor_counter = 0
         self.scan_counter = 0
         self.defect_counter = 0
+        self.m_scanner_status = ScannerStatus.Stop
 
         self.correct_file = False
         # self.connect_flag = False
@@ -344,6 +345,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         print("Отправлено оповещение об инкременте скана")
 
     def scanner_status(self, status):
+        self.m_scanner_status = status
         if status == ScannerStatus.Ready:
             print('scan ready: ', status)
             self.scanner_status_checkbox.setChecked(True)
@@ -367,6 +369,18 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.client_reply_timer.start(100)
 
     def send_connect(self):
+        if self.m_scanner_status == ScannerStatus.Stop:
+            msgBox = QMessageBox()
+            msgBox.setIcon(QMessageBox.Information)
+            msgBox.setText("Сканер не подключен!")
+            msgBox.setWindowTitle("Предупреждение")
+            msgBox.setStandardButtons(QMessageBox.Ok)
+
+            returnValue = msgBox.exec()
+            if returnValue == QMessageBox.Ok:
+                print('OK clicked')
+            return
+
         self.connect_button.setStyleSheet("background-color: green")
         line_number = self.line_number_combobox.currentText()
         self.client.cmd_q.put(ClientCommand(ClientCommand.CONNECT, 1, int(line_number), SERVER_ADDR))
