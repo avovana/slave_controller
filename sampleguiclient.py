@@ -300,7 +300,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         print('product_passed_dt: ', self.product_passed_dt)
 
         if scan_len <= 20:
-            self.log('Маленькая длина! Будет отбраковано')
+            self.log('Маленькая длина, Не соответствет формату, не внесен в базу')
             print('Scan len <= 20 Warn')
             return
 
@@ -318,7 +318,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         with open(self.ki_filename) as f:
             if scan in f.read():
                 print("дубликат!")
-                self.log('Дубликат! Будет отбраковано')
+                self.log('Дубликат, не внесен в базу')
                 return
 
         print("Скан валидный")
