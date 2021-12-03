@@ -101,7 +101,7 @@ class SocketClientThread(threading.Thread):
         self.reply_q.put(reply)
 
     #  def _handle_SEND(self, cmd):
-        print("_handle_SEND")
+        print("_handle_CLOSE")
         print("len(cmd.data): ", len(cmd.data))
         header = struct.pack('>L', len(cmd.data))
         try:

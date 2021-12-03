@@ -474,8 +474,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
                 self.name_combobox.addItem(self.xml_parser.get_rus_name(eng_name))
 
-                date_time = datetime.now().strftime("%d.%m.%Y-%H:%M")
-                self.ki_filename = self.ki_filename if self.ki_filename != "" else 'ki__' + eng_name + '__' + date_time + '.txt'
+                date_time = datetime.now().strftime("%d.%m.%Y-%H-%M")
+                self.ki_filename = self.ki_filename if self.ki_filename != "" else 'ki__' + eng_name + '__' + date_time + '.csv'
                 self.log('Файл для сканов: %s' % self.ki_filename)
                 self.plan_label.setText(plan)
                 self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE))  # Wait start_signal
