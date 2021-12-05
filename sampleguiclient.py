@@ -193,7 +193,18 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             self.serial.write(b'Hello' + bytes('\n'.encode()))
             #self.serial.write(b'Start' + bytes('\n'.encode()))
         else:
-            raise IOError("Cannot connect to device on port {}".format(port))
+            self.log("Ошибка! Не получилось подключиться к ком порту!")
+
+            msgBox = QMessageBox()
+            msgBox.setIcon(QMessageBox.Warning)
+            msgBox.setText("Нет подключения к ком порту. Попробуйте перезапустить программу или ПК.")
+            msgBox.setWindowTitle("Предупреждение")
+            msgBox.setStandardButtons(QMessageBox.Ok)
+
+            returnValue = msgBox.exec()
+            if returnValue == QMessageBox.Ok:
+                print('OK clicked')
+                self.exit()
 
     def exit(self):
         print('in exit')
