@@ -86,6 +86,12 @@ class XMLparser:
                 print("name eng: ", tag.attrib['name_english'])
                 return tag.attrib['name_english']
 
+    def get_rus_names(self):
+        names = []
+        for tag in self.root_node.findall('input/position'):
+            names.append(tag.attrib['name'])
+        print("names: ", names)
+        return names
 
 class ThriftImpl(QObject):
     scan_signal = pyqtSignal(str)
@@ -123,7 +129,11 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.correct_file_button.clicked.connect(self.correct_file)
         self.name_combobox.currentTextChanged.connect(self.name_text_changed)
         self.exit_button.clicked.connect(self.exit)
+        self.auto_button.clicked.connect(self.auto_handling)
+        self.start_auto_button.clicked.connect(self.auto_set_create_file)
         # self.choose_file_pushbutton.hide()
+        self.auto_choose_combobox.hide()
+        self.start_auto_button.hide()
 
         self.scanner_status_checkbox.setEnabled(False)
 
@@ -137,6 +147,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.correct_file = False
         # self.connect_flag = False
         # self.send_ready_flag = False
+        self.auto_state = False
 
         self.ki_filename = ""
         self.today_folder = "ki/" + datetime.now().strftime("%d-%m")
@@ -210,6 +221,22 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         print('in exit')
         self.exit_button.setStyleSheet("background-color: green")
         self.close()
+
+    def auto_handling(self):
+        self.auto_choose_combobox.show()
+        self.start_auto_button.show()
+        self.auto_choose_combobox.addItems(self.xml_parser.get_rus_names())
+        self.connect_button.hide()
+        self.ready_button.hide()
+        self.auto_state = True
+
+    def auto_set_create_file(self):
+        eng_name = self.xml_parser.get_eng_name(self.auto_choose_combobox.currentText())
+        date_time = datetime.now().strftime("%H-%M")
+        self.ki_filename = eng_name + '__' + date_time + '.csv'
+        print("self.ki_filename: ", self.ki_filename)
+        self.tasks[eng_name] = (1, 0)
+        self.log('Файл для сканов: %s' % self.ki_filename)
 
     def name_text_changed(self, str):
         print('str: ', str)
@@ -411,7 +438,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         line_number = self.line_number_combobox.currentText()
 
         name_rus = self.name_combobox.currentText()
-        name_eng = self.xml_parser.get_eng_name(name_rus)
+        name_eng = self.xml_parser.get_eng_name(name_rus) if not self.auto_state else self.xml_parser.get_eng_name(self.auto_choose_combobox.currentText())
         print("current name_rus: ", name_rus)
 
         task, plan = self.tasks.get(name_eng)
