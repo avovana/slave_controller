@@ -139,6 +139,10 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         # self.send_ready_flag = False
 
         self.ki_filename = ""
+        self.today_folder = "ki/" + datetime.now().strftime("%d-%m")
+        os.makedirs(self.today_folder, exist_ok=True)
+
+        os.chdir(self.today_folder)
         self.log("Started")
 
         self.product_passed_dt = datetime.now()
@@ -411,10 +415,28 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             return
 
         with open(self.ki_filename, "r") as ki_file:
+            counter = 0
             read_bytes = ki_file.read()
+            paired_list = read_bytes.split("\n")
+
+            for i in paired_list:
+                if i:
+                    counter += 1
+
+            print("counter ", counter)
             print("Считаны данные из файла ", read_bytes)
             self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 3, int(line_number), read_bytes, int(task)))
             self.log('Файл отправляется')
+
+        # rename
+        count_substr = str(counter) + "__" + "line_N" + str(config.line_number) + "__"
+        idx_to_insert = len(self.ki_filename) - 9
+        print("idx_to_insert ", idx_to_insert)
+        new_name = self.ki_filename[:idx_to_insert] + count_substr + self.ki_filename[idx_to_insert:]
+        print("new_name ", new_name)
+        os.rename(self.ki_filename, new_name)
+        print("saved with new_name")
+
 
     def on_client_reply_timer(self):
         try:
@@ -474,8 +496,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
                 self.name_combobox.addItem(self.xml_parser.get_rus_name(eng_name))
 
-                date_time = datetime.now().strftime("%d.%m.%Y-%H-%M")
-                self.ki_filename = self.ki_filename if self.ki_filename != "" else 'ki__' + eng_name + '__' + date_time + '.csv'
+                date_time = datetime.now().strftime("%H-%M")
+                self.ki_filename = self.ki_filename if self.ki_filename != "" else eng_name + '__' + date_time + '.csv'
                 self.log('Файл для сканов: %s' % self.ki_filename)
                 self.plan_label.setText(plan)
                 self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE))  # Wait start_signal
