@@ -484,10 +484,14 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                 self.log('Установлена связь')
                 return
             elif reply.type == ClientReply.ERROR:
-                self.log("ОШИБКА: %s" % reply.data)
+                if reply.data == "[Errno 32] Broken pipe":
+                    self.log("Нарушение связи! Полученный файл будет сохранён, но не будет отправлен, если связь не восстановиться!")
+                    print("[Errno 32] Broken pipe")
+                else:
+                    self.log("ОШИБКА: %s" % reply.data)
                 return
 
-            self.log("УСПЕШНО: %s" % reply.data)
+            self.log("%s" % reply.data)
 
             #if reply.data is None:
             #    return
@@ -550,6 +554,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
     def log(self, msg):
         timestamp = '[%010.3f]' % time.process_time()
         self.text_browser.append(timestamp + ' ' + str(msg))
+        self.text_browser.moveCursor(QTextCursor.End)
 
 
 def create_thrift_server(thrift_client, transport):

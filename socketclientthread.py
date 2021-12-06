@@ -8,9 +8,6 @@ import socket
 import struct
 import threading
 import queue
-import sys
-
-import errno
 from time import sleep
 
 class ClientCommand(object):
@@ -61,6 +58,9 @@ class SocketClientThread(threading.Thread):
         self.alive = tcp_thread_event
         self.socket = None
 
+        self.line_number = 0
+        self.address = ""
+
         self.handlers = {
             ClientCommand.CONNECT: self._handle_CONNECT,
             ClientCommand.CLOSE: self._handle_CLOSE,
@@ -86,8 +86,10 @@ class SocketClientThread(threading.Thread):
 
     def _handle_CONNECT(self, cmd):
         try:
+            self.line_number = cmd.data[0]
+            self.address = cmd.data[1]
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.connect((cmd.data[0], cmd.data[1]))
+            self.socket.connect((self.line_number, self.address))
             self.socket.settimeout(2)
             self.reply_q.put(self._success_connected())
             print("connect OK")
@@ -142,16 +144,32 @@ class SocketClientThread(threading.Thread):
         if cmd.data is not None:
             print("len(cmd.data): ", len(cmd.data))
             header = struct.pack('>L', 3 + len(cmd.data))
-        try:
-            #self.socket.sendall(header + format(msg_type).encode() + format(line_number).encode())
-            if cmd.data is None:
-                self.socket.sendall(header + struct.pack('>b', cmd.msg_type) + struct.pack('>b', cmd.line_number) + struct.pack('>b', cmd.task))
-            else:
-                self.socket.sendall(header + struct.pack('>b', cmd.msg_type) + struct.pack('>b', cmd.line_number) + struct.pack('>b', cmd.task) + cmd.data.encode())
 
-            self.reply_q.put(self._success_reply("Отправлен запрос"))
-        except IOError as e:
-            self.reply_q.put(self._error_reply(str(e) + "11111"))
+        for number in range(2):
+            try:
+                #self.socket.sendall(header + format(msg_type).encode() + format(line_number).encode())
+                if cmd.data is None:
+                    self.socket.sendall(header + struct.pack('>b', cmd.msg_type) + struct.pack('>b', cmd.line_number) + struct.pack('>b', cmd.task))
+                else:
+                    self.socket.sendall(header + struct.pack('>b', cmd.msg_type) + struct.pack('>b', cmd.line_number) + struct.pack('>b', cmd.task) + cmd.data.encode())
+
+                self.reply_q.put(self._success_reply("Отправлено"))
+                print("send ")
+                break
+            except IOError as e:
+                print("str(e): ", str(e))
+                if str(e) == "[Errno 32] Broken pipe":
+                    self.reply_q.put(self._success_reply("Попытка восстановления соединения"))
+                    print("Попытка восстановления соединения...")
+                    self.reply_q.put(self._error_reply(str(e)))
+                    self.socket.close()
+                    self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    self.socket.connect((self.line_number, self.address))
+                    self.socket.settimeout(2)
+                    self.reply_q.put(self._success_reply("Переподключение успешно"))
+                    continue
+                else:
+                    self.reply_q.put(self._error_reply(str(e)))
 
     def _handle_RECEIVE(self, cmd):
         print("Received:")
