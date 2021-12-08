@@ -16,6 +16,7 @@ from threading import Thread
 import threading
 
 import time
+from shutil import copyfile
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -463,17 +464,26 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
             print("counter ", counter)
             print("Считаны данные из файла ", read_bytes)
-            self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 3, int(line_number), read_bytes, int(task)))
-            self.log('Файл отправляется')
 
-        # rename
-        count_substr = str(counter) + "__" + "line_N" + str(config.line_number) + "__"
-        idx_to_insert = len(self.ki_filename) - 9
-        print("idx_to_insert ", idx_to_insert)
-        new_name = self.ki_filename[:idx_to_insert] + count_substr + self.ki_filename[idx_to_insert:]
-        print("new_name ", new_name)
-        os.rename(self.ki_filename, new_name)
-        print("saved with new_name")
+            self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 3, int(line_number), read_bytes, int(task)))
+            self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE))  # Wait confirm
+            self.log('Файл отправляется. Ожидается подтверждение доставки...')
+
+        # rename if wasn't
+        if "line_N" not in self.ki_filename:
+            count_substr = str(counter) + "__" + "line_N" + str(config.line_number) + "__"
+            idx_to_insert = len(self.ki_filename) - 9
+            new_name = self.ki_filename[:idx_to_insert] + count_substr + self.ki_filename[idx_to_insert:]
+            print("self.ki_filename: ", self.ki_filename)
+
+            # os.rename(self.ki_filename, new_name)
+            copyfile(self.ki_filename, new_name)
+            os.remove(self.ki_filename)
+            self.ki_filename = new_name
+            self.log('Файл переименован в %s' % self.ki_filename)
+            print("saved with new_name", self.ki_filename)
+        else:
+            print("already renamed!")
 
 
     def on_client_reply_timer(self):
@@ -491,7 +501,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                     self.log("ОШИБКА: %s" % reply.data)
                 return
 
-            self.log("%s" % reply.data)
+            #self.log("%s" % reply.data)
 
             #if reply.data is None:
             #    return
@@ -548,6 +558,9 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                 self.log('Можно начинать')
             elif msg_type == 8:
                 self.log('Задачи еще не созданы')
+            elif msg_type == 10:
+                self.log('Файл доставлен')
+
         except queue.Empty:
             pass
 

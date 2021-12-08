@@ -153,7 +153,7 @@ class SocketClientThread(threading.Thread):
                 else:
                     self.socket.sendall(header + struct.pack('>b', cmd.msg_type) + struct.pack('>b', cmd.line_number) + struct.pack('>b', cmd.task) + cmd.data.encode())
 
-                self.reply_q.put(self._success_reply("Отправлено"))
+                # self.reply_q.put(self._success_reply("Отправлено"))
                 print("send ")
                 break
             except IOError as e:
