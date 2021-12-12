@@ -155,7 +155,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         os.makedirs(self.today_folder, exist_ok=True)
 
         os.chdir(self.today_folder)
-        self.log("Started")
+        self.log("Старт программы")
 
         self.product_passed_dt = datetime.now()
 
@@ -432,7 +432,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.ready_button.setStyleSheet("background-color: green")
         line_number = self.line_number_combobox.currentText()
         self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 1, int(line_number)))
-        self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE))  # Wait info
+        self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE,10000))  # Wait info
 
     def send_file(self):
         self.finish_button.setStyleSheet("background-color: green")
@@ -466,7 +466,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             print("Считаны данные из файла ", read_bytes)
 
             self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 3, int(line_number), read_bytes, int(task)))
-            self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE))  # Wait confirm
+            self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE,3))  # Wait confirm, 3 for file... # better 3 means sec # no 3 timeout socket attempts
             self.log('Файл отправляется. Ожидается подтверждение доставки...')
 
         # rename if wasn't
@@ -491,14 +491,27 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             reply = self.client.reply_q.get(block=False)
 
             if reply.type == ClientReply.CONNECTED:
-                self.log('Установлена связь')
+                self.log_success('Установлена связь')
                 return
             elif reply.type == ClientReply.ERROR:
-                if reply.data == "[Errno 32] Broken pipe":
-                    self.log("Нарушение связи! Полученный файл будет сохранён, но не будет отправлен, если связь не восстановиться!")
-                    print("[Errno 32] Broken pipe")
+                # if reply.data == "socket_closed":
+                #     self.log("ОШИБКА: Соединение закрылось. Необходимо переподключиться")
+                if reply.data == "connection_error":
+                    self.log_error("Ошибка соединения")
+                    self.log_error("ОШИБКА: Нет ответа. Пробую переподключиться")
+                    self.client.cmd_q.put(ClientCommand(ClientCommand.CONNECT, 1, int(config.line_number), SERVER_ADDR))
+                    self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 1, int(config.line_number)))
+                    self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE, 10000))  # Wait info
+                # elif reply.data == "[Errno 32] Broken pipe":
+                #     self.log("Нарушение связи! Полученный файл будет сохранён, но не будет отправлен!")
+                #     print("[Errno 32] Broken pipe")
+                elif reply.data == "send_error":
+                    self.log_error("Ошибка отправки. Пробую переподключиться")
+                    self.client.cmd_q.put(ClientCommand(ClientCommand.CONNECT, 1, int(config.line_number), SERVER_ADDR))
+                    self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 1, int(config.line_number)))
+                    self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE, 10000))  # Wait info
                 else:
-                    self.log("ОШИБКА: %s" % reply.data)
+                    self.log_error("ОШИБКА: %s" % reply.data)
                 return
 
             #self.log("%s" % reply.data)
@@ -506,25 +519,26 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             #if reply.data is None:
             #    return
 
-            print("type: 3", type(reply.data))
+            # print("type: 3", type(reply.data))
             # first4bytes = b'\x00\x00\x00\x04'  #  reply.data[0:4]
             first4bytes = reply.data[0:4]
 
-            print("type: 4", type(first4bytes))
+            # print("type: 4", type(first4bytes))
             msg_type = int.from_bytes(first4bytes, byteorder='big', signed=False)
-            print("msg_type", msg_type)
-            print("msg_type", type(msg_type))
-            print("type: 5", type(reply.data))
-            print("type: 6", type(reply.data))
-            print("type: 7", type(reply.data[4:len(reply.data)]))
-            print("type: 8", type(reply.data[4:len(reply.data)].decode())) # м.б. я делаю операцию по ссылке? а думал, что по копии
+            # print("msg_type", msg_type)
+            # print("msg_type", type(msg_type))
+            # print("type: 5", type(reply.data))
+            # print("type: 6", type(reply.data))
+            # print("type: 7", type(reply.data[4:len(reply.data)]))
+            # print("type: 8", type(reply.data[4:len(reply.data)].decode())) # м.б. я делаю операцию по ссылке? а думал, что по копии
+
             # print("msg_type: ", msg_type)
             # print("reply.data: ", reply.data)
             # print("len(reply.data): ", len(reply.data))
             # print("reply.data[4:len(reply.data) - 4 - 1]: ", reply.data[4:len(reply.data)])
             # print("len(reply.data[4:len(reply.data) - 4 - 1]): ", len(reply.data[4:len(reply.data)]))
             body = reply.data[4:len(reply.data)].decode()
-            print("body ", type(body))
+            # print("body ", type(body)) # str
             print("body: ", body)
 
             if msg_type == 4:
@@ -552,21 +566,37 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                 self.ki_filename = self.ki_filename if self.ki_filename != "" else eng_name + '__' + date_time + '.csv'
                 self.log('Файл для сканов: %s' % self.ki_filename)
                 self.plan_label.setText(plan)
-                self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE))  # Wait start_signal
+                self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE,10000))  # Wait start_signal
                 self.log('Ожидание стартового сигнала...')
             elif msg_type == 6:
-                self.log('Можно начинать')
+                self.log_success('Можно начинать')
             elif msg_type == 8:
-                self.log('Задачи еще не созданы')
+                self.log_error('Задачи еще не созданы')
             elif msg_type == 10:
-                self.log('Файл доставлен')
+                self.log_success('Файл доставлен')
 
         except queue.Empty:
             pass
 
     def log(self, msg):
         timestamp = '[%010.3f]' % time.process_time()
-        self.text_browser.append(timestamp + ' ' + str(msg))
+        # self.text_browser.append(timestamp + ' ' + str(msg))
+        cursor = self.text_browser.textCursor()
+        cursor.insertHtml('''<p><span style="color: black;">{0} {1} </span><br>'''.format(timestamp, msg))
+        cursor = self.text_browser.textCursor()
+        self.text_browser.moveCursor(QTextCursor.End)
+
+    def log_success(self, msg):
+        timestamp = '[%010.3f]' % time.process_time()
+        cursor = self.text_browser.textCursor()
+        cursor.insertHtml('''<p><span style="color: green;">{0} {1} </span><br>'''.format(timestamp, msg))
+        self.text_browser.moveCursor(QTextCursor.End)
+        # self.text_browser.append(timestamp + ' ' + str(msg))
+
+    def log_error(self, msg):
+        timestamp = '[%010.3f]' % time.process_time()
+        cursor = self.text_browser.textCursor()
+        cursor.insertHtml('''<p><span style="color: red;">{0} {1} </span><br>'''.format(timestamp, msg))
         self.text_browser.moveCursor(QTextCursor.End)
 
 

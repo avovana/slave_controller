@@ -86,6 +86,8 @@ class SocketClientThread(threading.Thread):
 
     def _handle_CONNECT(self, cmd):
         try:
+            if self.socket:
+                self.socket.close()
             self.line_number = cmd.data[0]
             self.address = cmd.data[1]
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -114,21 +116,22 @@ class SocketClientThread(threading.Thread):
 
     #  def _handle_SEND_ready(self, cmd):
     def _handle_SEND(self, cmd):
-        print("_handle_SEND_ready")
+        print("____handle_SEND_ready")
 
         # msg_type = struct.pack('>b', cmd.data[0])
         #msg_type = cmd.data[0]
-        print("cmd.msg_type: ", cmd.msg_type)
-        print("format(cmd.msg_type).encode(): ", format(cmd.msg_type).encode())
-        print("struct.pack('>b', cmd.msg_type): ", struct.pack('>b', cmd.msg_type))
-
-        print("cmd.line_number: ", cmd.line_number)
-        print("format(cmd.line_number).encode(): ", format(cmd.line_number).encode())
-        print("struct.pack('>b', cmd.line_number): ", struct.pack('>b', cmd.line_number))
-
-        print("cmd.task: ", cmd.task)
-        print("format(cmd.task).encode(): ", format(cmd.task).encode())
-        print("struct.pack('>b', cmd.task): ", struct.pack('>b', cmd.task))
+        # Think smth to decrease debug log or make it... debug
+        # print("cmd.msg_type: ", cmd.msg_type)
+        # print("format(cmd.msg_type).encode(): ", format(cmd.msg_type).encode())
+        # print("struct.pack('>b', cmd.msg_type): ", struct.pack('>b', cmd.msg_type))
+        #
+        # print("cmd.line_number: ", cmd.line_number)
+        # print("format(cmd.line_number).encode(): ", format(cmd.line_number).encode())
+        # print("struct.pack('>b', cmd.line_number): ", struct.pack('>b', cmd.line_number))
+        #
+        # print("cmd.task: ", cmd.task)
+        # print("format(cmd.task).encode(): ", format(cmd.task).encode())
+        # print("struct.pack('>b', cmd.task): ", struct.pack('>b', cmd.task))
 
         #line_number = cmd.data[1]
         #print("line_number: ", line_number)
@@ -139,52 +142,45 @@ class SocketClientThread(threading.Thread):
         # scan3 = linecache.getline('/home/avovana/slave_controller/scans.txt', 3)
         # print("scan.encode(): ", scan.encode() + scan2.encode() + scan3.encode())
         # self.socket.sendall(scan.encode() + scan2.encode() + scan3.encode())
-        header = struct.pack('>L', 3)
 
-        if cmd.data is not None:
-            print("len(cmd.data): ", len(cmd.data))
+        if cmd.data:
             header = struct.pack('>L', 3 + len(cmd.data))
+            print(" len: ", len(cmd.data))
+        else:
+            header = struct.pack('>L', 3)
 
-        for number in range(2):
-            try:
-                #self.socket.sendall(header + format(msg_type).encode() + format(line_number).encode())
-                if cmd.data is None:
-                    self.socket.sendall(header + struct.pack('>b', cmd.msg_type) + struct.pack('>b', cmd.line_number) + struct.pack('>b', cmd.task))
-                else:
-                    self.socket.sendall(header + struct.pack('>b', cmd.msg_type) + struct.pack('>b', cmd.line_number) + struct.pack('>b', cmd.task) + cmd.data.encode())
+        try:
+            if cmd.data is None:
+                self.socket.sendall(header + struct.pack('>b', cmd.msg_type) + struct.pack('>b', cmd.line_number) + struct.pack('>b', cmd.task))
+            else:
+                self.socket.sendall(header + struct.pack('>b', cmd.msg_type) + struct.pack('>b', cmd.line_number) + struct.pack('>b', cmd.task) + cmd.data.encode())
 
-                # self.reply_q.put(self._success_reply("Отправлено"))
-                print("send ")
-                break
-            except IOError as e:
-                print("str(e): ", str(e))
-                if str(e) == "[Errno 32] Broken pipe":
-                    self.reply_q.put(self._success_reply("Попытка восстановления соединения"))
-                    print("Попытка восстановления соединения...")
-                    self.reply_q.put(self._error_reply(str(e)))
-                    self.socket.close()
-                    self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    self.socket.connect((self.line_number, self.address))
-                    self.socket.settimeout(2)
-                    self.reply_q.put(self._success_reply("Переподключение успешно"))
-                    continue
-                else:
-                    self.reply_q.put(self._error_reply(str(e)))
+            # self.reply_q.put(self._success_reply("Отправлено"))
+            print(" send OK")
+        except IOError as e:
+            print(" send not OK: ", str(e))
+            self.reply_q.put(self._error_reply(str("send_error")))
 
     def _handle_RECEIVE(self, cmd):
+        attempts = cmd.msg_type
         print("Received:")
         try:
             #msg_len = self._recv_header()  # если не коннектев, то исключение
             #print("--msg_len: ", msg_len)
 
-            header_data = self._recv_n_bytes(4)  # если не коннектев, то исключение
-            print("header_data: ", header_data)
+            header_data = self._recv_n_bytes(4, attempts)  # если не коннектев, то исключение
+            if header_data == b'':
+                # self.reply_q.put(self._error_reply(str("receive_timeout")))
+                self.reply_q.put(self._error_reply(str("connection_error")))
+                return
+
+            # print("header_data: ", header_data)
             msg_size = int.from_bytes(header_data, byteorder='big', signed=False)
-            print("msg_size: ", msg_size)
+            # print("msg_size: ", msg_size)
 
-            body_data = self._recv_n_bytes(msg_size)
+            body_data = self._recv_n_bytes(msg_size, attempts)  # type = bytes
 
-            print("type 1: ", type(body_data))
+            # print("type 1: ", type(body_data))
 
             if body_data != b'':
                 self.reply_q.put(self._success_reply(body_data))
@@ -221,42 +217,49 @@ class SocketClientThread(threading.Thread):
 
         return header
 
-    def _recv_n_bytes(self, n):
+    def _recv_n_bytes(self, n, attempts):
         """ Convenience method for receiving exactly n bytes from self.socket
             (assuming it's open and connected).
         """
+        print("__in receive_______ attempts {0} wait {1} bytes".format(attempts, n))
         data = b''
         while len(data) < n and self.alive.isSet():
-            print("len(data): ", len(data))
-            print("n: ", n)
-
+            print(" attempts {0}".format(attempts))
             try:
                 chunk = self.socket.recv(n - len(data))
+                print(" chunk len ", len(data))
             except socket.timeout as e:
                 err = e.args[0]
-                print("socket error timeout: ", err)
-            except socket.error as e:
-                print("socket error: ", e)
-                self.reply_q.put(self._error_reply(str(e)))
-            else:
-                print("chunk: ", chunk)
-                if chunk == b'':
-                    print("разрыв соединения")
-                    self.socket.close()
+                print(" socket error {0} attempts {1}".format(err, attempts))
+                attempts = attempts - 1
+                if attempts == 0:
+                    print(" attempts == 0 ")
                     data = b''
+                    break
+            except socket.error as e:
+                print(" socket error: ", e)
+                data = b''
+                break
+                #self.reply_q.put(self._error_reply(str(e)))
+            else:
+                print(" chunk: ", chunk) # Case: data transmitted, socket on server was closed, wait answer, receive 0 byte => means socket was closed
+                if chunk == b'':
+                    print(" разрыв соединения")
+                    # self.socket.close()
+                    data = b''
+                    # self.reply_q.put(self._error_reply(str("socket_closed")))
                     break
 
                 data += chunk
-                print("data: ", data)
-                print("len(data): ", len(data))
 
+        print(" data: ", data)
         return data
 
     def _error_reply(self, errstr):
         return ClientReply(ClientReply.ERROR, errstr)
 
     def _success_reply(self, data=None):
-        print("type: 2", type(data))
+        # print("type: 2", type(data))
         return ClientReply(ClientReply.SUCCESS, data)
 
     def _success_connected(self, data=None):
