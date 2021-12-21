@@ -126,7 +126,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.ready_button.clicked.connect(self.send_ready)
         # self.finish_button.clicked.connect(self.send_file)
         self.choose_file_pushbutton.clicked.connect(self.choose_file)
-        self.choose_file_pushbutton.clicked.connect(self.send_scan_test)
+        # self.choose_file_pushbutton.clicked.connect(self.send_scan_test)
         self.correct_file_button.clicked.connect(self.correct_file)
         self.name_combobox.currentTextChanged.connect(self.name_text_changed)
         self.start_button.clicked.connect(self.start_work)
@@ -653,14 +653,14 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
     def log_success(self, msg):
         timestamp = '[%010.3f]' % time.process_time()
         cursor = self.text_browser.textCursor()
-        cursor.insertHtml('''<p><span style="color: green;">{0} {1} </span><br>'''.format(timestamp, msg))
+        cursor.insertHtml('''<p><span style="font-size: 18pt; color: green;">{0} {1} </span><br>'''.format(timestamp, msg))
         self.text_browser.moveCursor(QTextCursor.End)
         # self.text_browser.append(timestamp + ' ' + str(msg))
 
     def log_error(self, msg):
         timestamp = '[%010.3f]' % time.process_time()
         cursor = self.text_browser.textCursor()
-        cursor.insertHtml('''<p><span style="color: red;">{0} {1} </span><br>'''.format(timestamp, msg))
+        cursor.insertHtml('''<p><span style="font-size: 18pt; color: red;">{0} {1} </span><br>'''.format(timestamp, msg))
         self.text_browser.moveCursor(QTextCursor.End)
 
 
