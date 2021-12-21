@@ -124,7 +124,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         self.connect_button.clicked.connect(self.send_connect)
         self.ready_button.clicked.connect(self.send_ready)
-        # self.finish_button.clicked.connect(self.send_file)
+        self.finish_button.clicked.connect(self.send_file)
         self.choose_file_pushbutton.clicked.connect(self.choose_file)
         # self.choose_file_pushbutton.clicked.connect(self.send_scan_test)
         self.correct_file_button.clicked.connect(self.correct_file)
@@ -614,8 +614,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
                     self.name_combobox.addItem(self.xml_parser.get_rus_name(eng_name) + ":" + date)
 
-                    self.log('Выбрать задание и нажать \"Начать\"')
-                    # self.log('Ожидание стартового сигнала для %s' % self.xml_parser.get_rus_name(eng_name) + ":" + date)
+                self.log('Выбрать задание и нажать \"Начать\"')
+                # self.log('Ожидание стартового сигнала для %s' % self.xml_parser.get_rus_name(eng_name) + ":" + date)
             elif msg_type == 6:
                 second4bytes = reply.data[4:8]
                 task_n = int.from_bytes(second4bytes, byteorder='big', signed=False)
