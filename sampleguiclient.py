@@ -84,7 +84,7 @@ class XMLparser:
     def get_eng_name(self, rus_name):
         for tag in self.root_node.findall('input/position'):
             if rus_name == tag.attrib['name']:
-                print("name eng: ", tag.attrib['name_english'])
+                print(" name eng: ", tag.attrib['name_english'])
                 return tag.attrib['name_english']
 
     def get_rus_names(self):
@@ -124,17 +124,18 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         self.connect_button.clicked.connect(self.send_connect)
         self.ready_button.clicked.connect(self.send_ready)
-        self.finish_button.clicked.connect(self.send_file)
+        # self.finish_button.clicked.connect(self.send_file)
         self.choose_file_pushbutton.clicked.connect(self.choose_file)
-        # self.choose_file_pushbutton.clicked.connect(self.send_scan_test)
+        self.choose_file_pushbutton.clicked.connect(self.send_scan_test)
         self.correct_file_button.clicked.connect(self.correct_file)
         self.name_combobox.currentTextChanged.connect(self.name_text_changed)
+        self.start_button.clicked.connect(self.start_work)
         self.exit_button.clicked.connect(self.exit)
-        self.auto_button.clicked.connect(self.auto_handling)
-        self.start_auto_button.clicked.connect(self.auto_set_create_file)
+        # self.auto_button.clicked.connect(self.auto_handling)
+        # self.start_auto_button.clicked.connect(self.auto_set_create_file)
         # self.choose_file_pushbutton.hide()
-        self.auto_choose_combobox.hide()
-        self.start_auto_button.hide()
+        # self.auto_choose_combobox.hide()
+        # self.start_auto_button.hide()
 
         self.scanner_status_checkbox.setEnabled(False)
 
@@ -150,6 +151,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         # self.send_ready_flag = False
         self.auto_state = False
 
+        self.py_script_path = os.path.dirname(os.path.realpath(__file__))
         self.ki_filename = ""
         self.today_folder = "ki/" + datetime.now().strftime("%d-%m")
         os.makedirs(self.today_folder, exist_ok=True)
@@ -236,14 +238,53 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         date_time = datetime.now().strftime("%H-%M")
         self.ki_filename = eng_name + '__' + date_time + '.csv'
         print("self.ki_filename: ", self.ki_filename)
-        self.tasks[eng_name] = (1, 0)
+        self.tasks[eng_name] = (1, 0, date_time)
         self.log('Файл для сканов: %s' % self.ki_filename)
 
-    def name_text_changed(self, str):
-        print('str: ', str)
-        plan, task = self.tasks.get(str)
-        print('plan: ', plan)
-        print('task: ', task)
+    def name_text_changed(self, rus_name_and_date):
+        name = rus_name_and_date.split(":")[0]
+        date = rus_name_and_date.split(":")[1]
+        print('__name_text_changed__')
+        print(' name: ', name)
+        task_n, plan = self.tasks.get(self.xml_parser.get_eng_name(name) + ":" + date)
+        self.plan_label.setText(plan)
+        print(' plan: ', plan)
+        print(' task: ', task_n)
+        print(' date: ', date)
+        self.log(' Текущее задание: %s' % rus_name_and_date)
+
+    def get_current_task_info(self):
+        print('__get_current_task_info__')
+        rus_name_and_date = self.name_combobox.currentText()
+        rus_name, date = rus_name_and_date.split(":")
+        eng_name = self.xml_parser.get_eng_name(rus_name)
+        eng_name_and_date = eng_name + ":" + date
+        task_n, plan = self.tasks.get(eng_name_and_date)
+        print(' rus_name_and_date: ', rus_name_and_date)
+        print(' rus_name: ', rus_name)
+        print(' date: ', date)
+        print(' eng_name: ', eng_name)
+        print(' eng_name_and_date: ', eng_name_and_date)
+        print(' plan: ', plan)
+        print(' task: ', task_n)
+
+        return eng_name, task_n, plan, date
+
+    def start_work(self):
+        print('__start__')
+        self.choose_file_pushbutton.setDisabled(True)
+        self.name_combobox.setDisabled(True)
+        self.start_button.setDisabled(True)
+
+        eng_name, task_n, plan, date = self.get_current_task_info()
+
+        date_time = datetime.now().strftime("%H-%M")
+        self.ki_filename = self.ki_filename if self.ki_filename != "" else eng_name + '__' + date_time + '.csv'
+        self.log('Файл для сканов: %s' % self.ki_filename)
+        self.log('Дата: %s' % date)
+        self.plan_label.setText(plan)
+        self.log('Ожидание стартового сигнала для %s' % self.name_combobox.currentText())
+        self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE, 10000))  # Wait start_signal
 
     def choose_file(self):
         ki_filename_dialog = QFileDialog.getOpenFileName()
@@ -308,15 +349,20 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             print('OFF processed')
 
     def scan(self, scan):
+        if not self.ki_filename:
+            self.log_error("Нет файла! Необходимо нажать \"Начать\" для создания файла")
+            return
+
+        print('__scan__')
         scan_len = len(scan)
-        print('scan : ', scan)
+        print(' scan : ', scan)
 
         if self.correct_file:
             lines = []
             with open(self.ki_filename) as f:
                 lines = f.readlines()
 
-            print('lines : ', lines)
+            print(' lines : ', lines)
             lines.remove(scan + "\n")
 
             with open(self.ki_filename, 'w') as f:
@@ -326,46 +372,47 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             self.scan_counter = self.scan_counter - 1
             self.current_label.setText(str(self.scan_counter))
 
-            name_rus = self.name_combobox.currentText()
-            print("current name_rus: ", name_rus)
-            name_eng = self.xml_parser.get_eng_name(name_rus)
-
-            task, plan = self.tasks.get(name_eng)
-            print("current name: ", name_eng)
-            print("task: ", task)
+            eng_name, task_n, plan, date = self.get_current_task_info()
 
             line_number = self.line_number_combobox.currentText()
-            self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 2, int(line_number), self.current_label.text(), int(task)))
-            print("Отправлено оповещение об корректировки")
-
+            self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 2, int(line_number), self.current_label.text(), int(task_n)))
+            print(" Отправлено оповещение об корректировки")
             return
 
         self.product_passed_dt = datetime.now()
-        print('product_passed_dt: ', self.product_passed_dt)
+        print(' product_passed_dt: ', self.product_passed_dt)
 
         if scan_len <= 20:
             self.log('Маленькая длина, Не соответствет формату, не внесен в базу')
-            print('Scan len <= 20 Warn')
+            print(' Scan len <= 20 Warn')
             return
 
         gs_pos = scan.find(chr(29))
-        print('gs_pos = ', gs_pos)
+        print(' gs_pos = ', gs_pos)
 
         if gs_pos == -1:
-            print('Нет символа GS Warn')
+            print(' Нет символа GS Warn')
             self.log('Нет символа GS! Будет отбраковано')
             return
+
+        eng_name, task_n, plan, date = self.get_current_task_info()
+
+        os.chdir(self.py_script_path)
+        this_task_folder = "ki/" + date
+        os.makedirs(this_task_folder, exist_ok=True)
+
+        os.chdir(this_task_folder)
 
         if not os.path.exists(self.ki_filename):
             os.mknod(self.ki_filename)
 
         with open(self.ki_filename) as f:
             if scan in f.read():
-                print("дубликат!")
+                print(" дубликат!")
                 self.log('Дубликат, не внесен в базу')
                 return
 
-        print("Скан валидный")
+        print(" Скан валидный")
         self.scan_counter = self.scan_counter + 1
         self.serial.write(b'good' + bytes('\n'.encode()))
 
@@ -375,17 +422,9 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.log('Скан записан в файл. Подготовлен для отправки')
         self.current_label.setText(str(self.scan_counter))
 
-        name_rus = self.name_combobox.currentText()
-        print("current name_rus: ", name_rus)
-        name_eng = self.xml_parser.get_eng_name(name_rus)
-
-        task, plan = self.tasks.get(name_eng)
-        print("current name: ", name_eng)
-        print("task: ", task)
-
         line_number = self.line_number_combobox.currentText()
-        self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 2, int(line_number), self.current_label.text(), int(task)))
-        print("Отправлено оповещение об инкременте скана")
+        self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 2, int(line_number), self.current_label.text(), int(task_n)))
+        print(" Отправлено оповещение об инкременте скана")
 
     def scanner_status(self, status):
         self.m_scanner_status = status
@@ -429,28 +468,35 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.client.cmd_q.put(ClientCommand(ClientCommand.CONNECT, 1, int(line_number), SERVER_ADDR))
 
     def send_ready(self):
+        print("__send_ready__")
         self.ready_button.setStyleSheet("background-color: green")
         line_number = self.line_number_combobox.currentText()
         self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 1, int(line_number)))
         self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE,10000))  # Wait info
 
     def send_file(self):
+        print("__send_file__")
         self.finish_button.setStyleSheet("background-color: green")
         line_number = self.line_number_combobox.currentText()
 
-        name_rus = self.name_combobox.currentText()
-        name_eng = self.xml_parser.get_eng_name(name_rus) if not self.auto_state else self.xml_parser.get_eng_name(self.auto_choose_combobox.currentText())
-        print("current name_rus: ", name_rus)
+        # name_rus = self.name_combobox.currentText()
+        # name_eng = self.xml_parser.get_eng_name(name_rus) if not self.auto_state else self.xml_parser.get_eng_name(self.auto_choose_combobox.currentText())
+        # print(" current name_rus: ", name_rus)
+        # print("         name_eng: ", name_eng)
 
-        task, plan = self.tasks.get(name_eng)
-        print("task: ", task)
-        print("plan: ", plan)
+        # task, plan, date = self.tasks.get(name_eng)
+        # print(" task: ", task)
+        # print(" plan: ", plan)
+        # print(" date: ", date)
 
-        date_time = datetime.now().strftime("%d.%m.%Y")
-        print("Подготовка к отправке файла ", self.ki_filename)
+        # date_time = datetime.now().strftime("%d.%m.%Y")
+
+        eng_name, task_n, plan, date = self.get_current_task_info()
+
+        print(" Подготовка к отправке файла ", self.ki_filename)
 
         if not os.path.exists(self.ki_filename):
-            print("Файла нет!")
+            print(" Файла нет!")
             return
 
         with open(self.ki_filename, "r") as ki_file:
@@ -462,33 +508,34 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                 if i:
                     counter += 1
 
-            print("counter ", counter)
-            print("Считаны данные из файла ", read_bytes)
+            print(" scans: ", counter)
+            print(" Считаны данные из файла ", read_bytes)
 
-            self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 3, int(line_number), read_bytes, int(task)))
+            self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 3, int(line_number), read_bytes, int(task_n)))
             self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE,3))  # Wait confirm, 3 for file... # better 3 means sec # no 3 timeout socket attempts
-            self.log('Файл отправляется. Ожидается подтверждение доставки...')
+            self.log(' Файл отправляется. Ожидается подтверждение доставки...')
 
         # rename if wasn't
         if "line_N" not in self.ki_filename:
             count_substr = str(counter) + "__" + "line_N" + str(config.line_number) + "__"
             idx_to_insert = len(self.ki_filename) - 9
             new_name = self.ki_filename[:idx_to_insert] + count_substr + self.ki_filename[idx_to_insert:]
-            print("self.ki_filename: ", self.ki_filename)
+            print(" filename: ", self.ki_filename)
 
             # os.rename(self.ki_filename, new_name)
             copyfile(self.ki_filename, new_name)
             os.remove(self.ki_filename)
             self.ki_filename = new_name
-            self.log('Файл переименован в %s' % self.ki_filename)
-            print("saved with new_name", self.ki_filename)
+            self.log(' Файл переименован в %s' % self.ki_filename)
+            print(" saved with new name: ", self.ki_filename)
         else:
-            print("already renamed!")
+            print(" already renamed!")
 
 
     def on_client_reply_timer(self):
         try:
             reply = self.client.reply_q.get(block=False)
+            print("__on_client_reply_timer__")
 
             if reply.type == ClientReply.CONNECTED:
                 self.log_success('Установлена связь')
@@ -539,41 +586,58 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             # print("len(reply.data[4:len(reply.data) - 4 - 1]): ", len(reply.data[4:len(reply.data)]))
             body = reply.data[4:len(reply.data)].decode()
             # print("body ", type(body)) # str
-            print("body: ", body)
+            print(" body: ", body)
 
             if msg_type == 4:
-                tasks = body.split(";")[0]
-                print("tasks: ", tasks)
+                # tasks = body.split(";")[0]
+                tasks = body.split(";")
+                print(" tasks: ", tasks)
 
-                task, eng_name, plan = tasks.split(":")
-                self.tasks[eng_name] = (task, plan)
-                # for idx, value in enumerate(tasks):
-                #     task, name, plan = value.split(",")
-                #     self.tasks[name] = (task, plan)
-                #     print("name: ", name)
-                #     print("task: ", task)
-                #     print("plan: ", plan)
-                #     self.name_combobox.addItem(name)
+                for task in tasks:
+                    print(task)
 
-                # plan, task = self.tasks.get(str)
-                print('plan: ', plan)
-                print('task: ', task)
-                print('name: ', eng_name)
+                    task_n, eng_name, plan, date = task.split(":")
+                    self.tasks[eng_name + ":" + date] = (task_n, plan)
+                    # for idx, value in enumerate(tasks):
+                    #     task, name, plan = value.split(",")
+                    #     self.tasks[name] = (task, plan)
+                    #     print("name: ", name)
+                    #     print("task: ", task)
+                    #     print("plan: ", plan)
+                    #     self.name_combobox.addItem(name)
 
-                self.name_combobox.addItem(self.xml_parser.get_rus_name(eng_name))
+                    # plan, task = self.tasks.get(str)
+                    print(' plan: ', plan)
+                    print(' task: ', task_n)
+                    print(' name: ', eng_name)
+                    print(' date: ', date)
 
-                date_time = datetime.now().strftime("%H-%M")
-                self.ki_filename = self.ki_filename if self.ki_filename != "" else eng_name + '__' + date_time + '.csv'
-                self.log('Файл для сканов: %s' % self.ki_filename)
-                self.plan_label.setText(plan)
-                self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE,10000))  # Wait start_signal
-                self.log('Ожидание стартового сигнала...')
+                    self.name_combobox.addItem(self.xml_parser.get_rus_name(eng_name) + ":" + date)
+
+                    self.log('Выбрать задание и нажать \"Начать\"')
+                    # self.log('Ожидание стартового сигнала для %s' % self.xml_parser.get_rus_name(eng_name) + ":" + date)
             elif msg_type == 6:
-                self.log_success('Можно начинать')
+                second4bytes = reply.data[4:8]
+                task_n = int.from_bytes(second4bytes, byteorder='big', signed=False)
+                print(' task_n: ', task_n)
+
+                for name_and_date, task_info in self.tasks.items():
+                    print(' ----------- ')
+                    name = name_and_date.split(":")[0]
+                    date = name_and_date.split(":")[1]
+                    task_n_dic, plan = task_info
+                    print(' plan:          ', plan)
+                    print(' task_n_dic:    ', task_n_dic)
+                    print(' name:          ', name)
+                    print(' date:          ', date)
+
+                    if task_n == int(task_n_dic):
+                        print(' Можно начинать')
+                        self.log_success('Можно начинать: %s' % self.xml_parser.get_rus_name(name) + ":" + date)
             elif msg_type == 8:
                 self.log_error('Задачи еще не созданы')
             elif msg_type == 10:
-                self.log_success('Файл доставлен')
+                self.log_success('Файл доставлен. Задание завершено.')
 
         except queue.Empty:
             pass

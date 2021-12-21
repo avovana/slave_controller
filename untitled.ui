@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>612</width>
-    <height>411</height>
+    <height>442</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,78 +18,7 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="4" column="4">
-     <widget class="QLabel" name="current_label_2">
-      <property name="font">
-       <font>
-        <pointsize>14</pointsize>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <property name="text">
-       <string>Факт</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="4">
-     <widget class="QComboBox" name="line_number_combobox">
-      <property name="font">
-       <font>
-        <pointsize>14</pointsize>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <item>
-       <property name="text">
-        <string>0</string>
-       </property>
-      </item>
-     </widget>
-    </item>
-    <item row="5" column="0" colspan="3">
-     <widget class="QComboBox" name="name_combobox">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="font">
-       <font>
-        <pointsize>26</pointsize>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="0" colspan="2">
-     <widget class="QCheckBox" name="scanner_status_checkbox">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
-      <property name="font">
-       <font>
-        <pointsize>14</pointsize>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <property name="text">
-       <string>Сканнер</string>
-      </property>
-      <property name="tristate">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </item>
-    <item row="7" column="0" colspan="5">
+    <item row="8" column="0" colspan="5">
      <widget class="QPushButton" name="finish_button">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
@@ -107,69 +36,6 @@
       </property>
       <property name="text">
        <string>Завершить. Отправить файл</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="0" colspan="5">
-     <widget class="QPushButton" name="ready_button">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="font">
-       <font>
-        <pointsize>14</pointsize>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <property name="text">
-       <string>Оповестить о готовности</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="0" colspan="5">
-     <widget class="QPushButton" name="choose_file_pushbutton">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="font">
-       <font>
-        <pointsize>14</pointsize>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <property name="text">
-       <string>Начать с прошлого файла</string>
-      </property>
-     </widget>
-    </item>
-    <item row="6" column="0" colspan="5">
-     <widget class="QPushButton" name="correct_file_button">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="font">
-       <font>
-        <pointsize>14</pointsize>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <property name="text">
-       <string>Корректировка</string>
       </property>
      </widget>
     </item>
@@ -209,8 +75,8 @@
       </property>
      </widget>
     </item>
-    <item row="2" column="0" colspan="5">
-     <widget class="QPushButton" name="connect_button">
+    <item row="9" column="0" colspan="5">
+     <widget class="QPushButton" name="exit_button">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
         <horstretch>0</horstretch>
@@ -226,12 +92,36 @@
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
       <property name="text">
-       <string>Подключиться</string>
+       <string>Выключить</string>
       </property>
      </widget>
     </item>
-    <item row="4" column="0" colspan="3">
-     <widget class="QLabel" name="product_name_label">
+    <item row="5" column="0" colspan="3">
+     <widget class="QComboBox" name="name_combobox">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>26</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0" colspan="5">
+     <widget class="QPushButton" name="ready_button">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="font">
        <font>
         <pointsize>14</pointsize>
@@ -241,12 +131,12 @@
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
       <property name="text">
-       <string>Наименование продукции</string>
+       <string>Оповестить о готовности</string>
       </property>
      </widget>
     </item>
-    <item row="0" column="3">
-     <widget class="QLabel" name="line_number_label">
+    <item row="4" column="4">
+     <widget class="QLabel" name="current_label_2">
       <property name="font">
        <font>
         <pointsize>14</pointsize>
@@ -256,7 +146,7 @@
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
       <property name="text">
-       <string>Номер линии</string>
+       <string>Факт</string>
       </property>
      </widget>
     </item>
@@ -293,41 +183,8 @@
       </property>
      </widget>
     </item>
-    <item row="5" column="4">
-     <widget class="QLabel" name="current_label">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="font">
-       <font>
-        <pointsize>64</pointsize>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
-      </property>
-      <property name="lineWidth">
-       <number>5</number>
-      </property>
-      <property name="midLineWidth">
-       <number>5</number>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-    <item row="8" column="0" colspan="5">
-     <widget class="QPushButton" name="exit_button">
+    <item row="1" column="0" colspan="5">
+     <widget class="QPushButton" name="choose_file_pushbutton">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
         <horstretch>0</horstretch>
@@ -343,11 +200,64 @@
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
       <property name="text">
-       <string>Выключить</string>
+       <string>Начать с прошлого файла</string>
       </property>
      </widget>
     </item>
-    <item row="0" column="7" rowspan="9">
+    <item row="4" column="0" colspan="3">
+     <widget class="QLabel" name="product_name_label">
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string>Наименование продукции</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="4">
+     <widget class="QComboBox" name="line_number_combobox">
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <item>
+       <property name="text">
+        <string>0</string>
+       </property>
+      </item>
+     </widget>
+    </item>
+    <item row="2" column="0" colspan="5">
+     <widget class="QPushButton" name="connect_button">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string>Подключиться</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="7" rowspan="10">
      <widget class="QTextBrowser" name="text_browser">
       <property name="palette">
        <palette>
@@ -790,6 +700,117 @@
          </colorrole>
         </disabled>
        </palette>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0" colspan="2">
+     <widget class="QCheckBox" name="scanner_status_checkbox">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string>Сканнер</string>
+      </property>
+      <property name="tristate">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="4">
+     <widget class="QLabel" name="current_label">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>64</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <property name="lineWidth">
+       <number>5</number>
+      </property>
+      <property name="midLineWidth">
+       <number>5</number>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+    </item>
+    <item row="7" column="0" colspan="5">
+     <widget class="QPushButton" name="correct_file_button">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string>Корректировка</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="3">
+     <widget class="QLabel" name="line_number_label">
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string>Номер линии</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="0" colspan="5">
+     <widget class="QPushButton" name="start_button">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string>Начать</string>
       </property>
      </widget>
     </item>
