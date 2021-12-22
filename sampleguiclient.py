@@ -260,19 +260,19 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         eng_name = self.xml_parser.get_eng_name(rus_name)
         eng_name_and_date = eng_name + ":" + date
         task_n, plan = self.tasks.get(eng_name_and_date)
-        print(' rus_name_and_date: ', rus_name_and_date)
-        print(' rus_name: ', rus_name)
-        print(' date: ', date)
-        print(' eng_name: ', eng_name)
-        print(' eng_name_and_date: ', eng_name_and_date)
-        print(' plan: ', plan)
-        print(' task: ', task_n)
+        # print(' rus_name_and_date: ', rus_name_and_date)
+        # print(' rus_name: ', rus_name)
+        # print(' date: ', date)
+        # print(' eng_name: ', eng_name)
+        # print(' eng_name_and_date: ', eng_name_and_date)
+        # print(' plan: ', plan)
+        # print(' task: ', task_n)
 
         return eng_name, task_n, plan, date
 
     def start_work(self):
         print('__start__')
-        self.choose_file_pushbutton.setDisabled(True)
+        # self.choose_file_pushbutton.setDisabled(True)
         self.name_combobox.setDisabled(True)
         self.start_button.setDisabled(True)
 
@@ -283,8 +283,14 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.log('Файл для сканов: %s' % self.ki_filename)
         self.log('Дата: %s' % date)
         self.plan_label.setText(plan)
-        self.log('Ожидание стартового сигнала для %s' % self.name_combobox.currentText())
-        self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE, 10000))  # Wait start_signal
+        # self.log('Ожидание стартового сигнала для %s' % self.name_combobox.currentText())
+        # self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE, 10000))  # Wait start_signal
+
+        eng_name, task_n, plan, date = self.get_current_task_info()
+        line_number = self.line_number_combobox.currentText()
+        self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 4, int(line_number), self.current_label.text(), int(task_n)))
+        self.log_success('Отправлен сигнал о начале работе')
+        print(" Отправлено оповещение о начале работе с заданием")
 
     def choose_file(self):
         ki_filename_dialog = QFileDialog.getOpenFileName()
