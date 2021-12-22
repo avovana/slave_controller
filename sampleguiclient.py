@@ -242,9 +242,16 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.log('Файл для сканов: %s' % self.ki_filename)
 
     def name_text_changed(self, rus_name_and_date):
+        print('__name_text_changed__')
+        print(' rus_name_and_date: ', rus_name_and_date)
+
+        if rus_name_and_date == "":
+            print(' empty ')
+            self.ready_button.setStyleSheet("background-color: rgb(141, 255, 255);")
+            return
+
         name = rus_name_and_date.split(":")[0]
         date = rus_name_and_date.split(":")[1]
-        print('__name_text_changed__')
         print(' name: ', name)
         task_n, plan = self.tasks.get(self.xml_parser.get_eng_name(name) + ":" + date)
         self.plan_label.setText(plan)
@@ -425,7 +432,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         with open(self.ki_filename, "a") as ki_file:
             ki_file.write(scan + "\n")
 
-        self.log('Скан записан в файл. Подготовлен для отправки')
+        self.log('Скан записан в файл')
         self.current_label.setText(str(self.scan_counter))
 
         line_number = self.line_number_combobox.currentText()
@@ -553,8 +560,10 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                     self.log_error("Ошибка соединения")
                     self.log_error("ОШИБКА: Нет ответа. Пробую переподключиться")
                     self.client.cmd_q.put(ClientCommand(ClientCommand.CONNECT, 1, int(config.line_number), SERVER_ADDR))
-                    self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 1, int(config.line_number)))
-                    self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE, 10000))  # Wait info
+                    self.finish_button.setStyleSheet("background-color: rgb(141, 255, 255);")
+                    # while working not needed to request data after connection recover
+                    # self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 1, int(config.line_number)))
+                    # self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE, 10000))  # Wait info
                 # elif reply.data == "[Errno 32] Broken pipe":
                 #     self.log("Нарушение связи! Полученный файл будет сохранён, но не будет отправлен!")
                 #     print("[Errno 32] Broken pipe")
@@ -618,6 +627,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                     print(' name: ', eng_name)
                     print(' date: ', date)
 
+                    self.log(' Добавлено задание: %s' % self.xml_parser.get_rus_name(eng_name) + ":" + date)
                     self.name_combobox.addItem(self.xml_parser.get_rus_name(eng_name) + ":" + date)
 
                 self.log('Выбрать задание и нажать \"Начать\"')
@@ -643,7 +653,20 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             elif msg_type == 8:
                 self.log_error('Задачи еще не созданы')
             elif msg_type == 10:
+                print(' msg_type == 10')
+                print(' self.name_combobox.currentIndex() = ', self.name_combobox.currentIndex())
+                print(' self.name_combobox.currentText()  = ', self.name_combobox.currentText())
                 self.log_success('Файл доставлен. Задание завершено.')
+                self.name_combobox.setDisabled(False)
+                self.start_button.setDisabled(False)
+                self.ki_filename = ""
+                self.name_combobox.removeItem(self.name_combobox.currentIndex())
+                self.finish_button.setStyleSheet("background-color: rgb(141, 255, 255);")
+                self.current_label.setText("")
+                self.plan_label.setText("")
+                self.scan_counter = 0
+                self.defect_counter = 0
+                self.sensor_counter = 0
 
         except queue.Empty:
             pass

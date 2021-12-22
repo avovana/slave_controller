@@ -116,7 +116,7 @@ class SocketClientThread(threading.Thread):
 
     #  def _handle_SEND_ready(self, cmd):
     def _handle_SEND(self, cmd):
-        print("____handle_SEND_ready")
+        print("__handle_SEND__")
 
         # msg_type = struct.pack('>b', cmd.data[0])
         #msg_type = cmd.data[0]
