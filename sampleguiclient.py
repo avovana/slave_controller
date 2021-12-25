@@ -52,12 +52,15 @@ class Config:
         self.scanner_path = self.config['scanner_path']
         self.position_path = self.config['position_path']
         self.line_number = self.config['line_number']
+        self.check_group_code = self.config['check_group_code']
 
-        print("self.comport: ", self.comport)
-        print("self.host: ", self.host)
-        print("self.port: ", self.port)
-        print("self.scanner_path: ", self.scanner_path)
-        print("self.position_path: ", self.position_path)
+        print("__config__")
+        print(" comport: ", self.comport)
+        print(" host: ", self.host)
+        print(" port: ", self.port)
+        print(" scanner_path: ", self.scanner_path)
+        print(" position_path: ", self.position_path)
+        print(" check_group_code: ", self.check_group_code)
 
 
 config = Config()
@@ -93,6 +96,50 @@ class XMLparser:
             names.append(tag.attrib['name'])
         print("names: ", names)
         return names
+
+    def get_group_code(self, eng_name):
+        for tag in self.root_node.findall('input/position'):
+            if eng_name == tag.attrib['name_english']:
+                print(" group_code: ", tag.attrib['group_code'])
+                return tag.attrib['group_code']
+
+
+class ScanValidator:
+    def __init__(self, scan):
+        print('__ScanValidator__')
+        print(' scan : ', scan)
+        self.scan = scan
+        self.scan_len = len(self.scan)
+
+    def check_len(self):
+        if self.scan_len <= 20:
+            print(' Scan len <= 20 Warn')
+            return False
+        else:
+            return True
+
+    def check_gs(self):
+        gs_pos = self.scan.find(chr(29))
+        print(' gs_pos = ', gs_pos)
+
+        if gs_pos == -1:
+            print(' Нет символа GS Warn')
+            return False
+        else:
+            return True
+
+    def check_dublicate(self, file_path):
+        with open(file_path) as f:
+            if self.scan in f.read():
+                print(" дубликат!")
+                return False
+        return True
+
+    def check_group(self, group):
+        if group not in self.scan:
+            print(" Нет группы в скане")
+            return False
+        return True
 
 class ThriftImpl(QObject):
     scan_signal = pyqtSignal(str)
@@ -316,7 +363,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.current_label.setText(str(self.scan_counter))
 
     def send_scan_test(self):
-        scan = "0104629418600327215/lfI,933yJ9"
+        scan = "0104629418600167215/lfI,933yJ9"
         self.scan(scan)
 
     def correct_file(self):
@@ -362,13 +409,11 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             print('OFF processed')
 
     def scan(self, scan):
+        print('__scan__')
         if not self.ki_filename:
             self.log_error("Нет файла! Необходимо нажать \"Начать\" для создания файла")
             return
 
-        print('__scan__')
-        scan_len = len(scan)
-        print(' scan : ', scan)
 
         if self.correct_file:
             lines = []
@@ -395,16 +440,13 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.product_passed_dt = datetime.now()
         print(' product_passed_dt: ', self.product_passed_dt)
 
-        if scan_len <= 20:
+        scan_validator = ScanValidator(scan)
+
+        if not scan_validator.check_len():
             self.log('Маленькая длина, Не соответствет формату, не внесен в базу')
-            print(' Scan len <= 20 Warn')
             return
 
-        gs_pos = scan.find(chr(29))
-        print(' gs_pos = ', gs_pos)
-
-        if gs_pos == -1:
-            print(' Нет символа GS Warn')
+        if not scan_validator.check_gs():
             self.log('Нет символа GS! Будет отбраковано')
             return
 
@@ -419,10 +461,14 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         if not os.path.exists(self.ki_filename):
             os.mknod(self.ki_filename)
 
-        with open(self.ki_filename) as f:
-            if scan in f.read():
-                print(" дубликат!")
-                self.log('Дубликат, не внесен в базу')
+        if not scan_validator.check_dublicate(self.ki_filename):
+            self.log('Дубликат, не внесен в базу')
+            return
+
+        if config.check_group_code:
+            group_code = self.xml_parser.get_group_code(eng_name)
+            if not scan_validator.check_group(group_code):
+                self.log('Не соответствует группе')
                 return
 
         print(" Скан валидный")

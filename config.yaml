@@ -5,3 +5,4 @@ server:
 scanner_path: /home/vova/slave_controller/scanner
 position_path: /home/vova/build-master_labeling/positions.xml
 line_number: 1
+check_group_code: Yes
