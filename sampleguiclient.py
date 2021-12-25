@@ -468,7 +468,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         if config.check_group_code:
             group_code = self.xml_parser.get_group_code(eng_name)
             if not scan_validator.check_group(group_code):
-                self.log('Не соответствует группе')
+                self.log('Не соответствует товарный группе')
                 return
 
         print(" Скан валидный")
