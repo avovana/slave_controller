@@ -343,8 +343,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         eng_name, task_n, plan, date = self.get_current_task_info()
         line_number = self.line_number_combobox.currentText()
         self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 4, int(line_number), self.current_label.text(), int(task_n)))
-        self.log_success('Отправлен сигнал о начале работе')
-        print(" Отправлено оповещение о начале работе с заданием")
+        self.log_success('Отправлен сигнал о начале работы')
+        print(" Отправлено оповещение о начале работы с заданием")
 
     def choose_file(self):
         ki_filename_dialog = QFileDialog.getOpenFileName()
