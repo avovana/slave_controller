@@ -380,12 +380,9 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             self.log('Режим корректировки выключен')
 
     def on_serial_read(self):
-        print('sensor_counter=', self.sensor_counter)
-        print('scan_counter=  ', self.scan_counter)
-        print('defect_counter=', self.defect_counter)
         readbytes = bytes(self.serial.readAll())
 
-        print('readbytes: ', readbytes)
+        print('Read from comport: ', readbytes)
 
         if readbytes == b'Hello\r\n':
             self.comport_status_checkbox.setChecked(True)
@@ -398,19 +395,23 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             current_dt = datetime.now()
             duration = current_dt - self.product_passed_dt
             duration_in_ms = duration.total_seconds() * 1000
-            print('duration_in_ms: ', duration_in_ms)
+            # print('duration_in_ms: ', duration_in_ms)
 
             if self.sensor_counter == self.scan_counter + self.defect_counter:
-                print('previously scanner read scan success')
+                print(' previously scanner read scan success')
             else:
-                print('previously scanner read scan failed')
+                print(' previously scanner read scan failed')
                 self.defect_counter = self.defect_counter + 1
                 self.serial.write(b'brak' + bytes('\n'.encode()))  #  self.serial.write(bytes([98, 114, 97, 107, 10]))  # brak/n
                 print(" Send to comport: ", "brak")
         elif readbytes == b'ON\r\n':
-            print('On processed')
+            print(' On processed')
         elif readbytes == b'OFF\r\n':
-            print('OFF processed')
+            print(' OFF processed')
+
+        print(' sensor counter = ', self.sensor_counter)
+        print(' scan counter   = ', self.scan_counter)
+        print(' defect counter = ', self.defect_counter)
 
     def scan(self, scan):
         # print('__scan__')
