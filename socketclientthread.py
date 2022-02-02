@@ -25,9 +25,9 @@ class ClientCommand(object):
         self.type = type
         self.msg_type = msg_type
         self.line_number = line_number
-        print("task is ", task)
+        # print("task is ", task)
         self.task = 0 if task is None else task
-        print("self.task is ", self.task)
+        # print("self.task is ", self.task)
         self.data = data
 
 

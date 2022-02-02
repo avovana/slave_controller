@@ -81,49 +81,49 @@ class XMLparser:
     def get_rus_name(self, eng_name):
         for tag in self.root_node.findall('input/position'):
             if eng_name == tag.attrib['name_english']:
-                print("name rus: ", tag.attrib['name'])
+                # print("name rus: ", tag.attrib['name'])
                 return tag.attrib['name']
 
     def get_eng_name(self, rus_name):
         for tag in self.root_node.findall('input/position'):
             if rus_name == tag.attrib['name']:
-                print(" name eng: ", tag.attrib['name_english'])
+                # print(" name eng: ", tag.attrib['name_english'])
                 return tag.attrib['name_english']
 
     def get_rus_names(self):
         names = []
         for tag in self.root_node.findall('input/position'):
             names.append(tag.attrib['name'])
-        print("names: ", names)
+        # print("names: ", names)
         return names
 
     def get_group_code(self, eng_name):
         for tag in self.root_node.findall('input/position'):
             if eng_name == tag.attrib['name_english']:
-                print(" group_code: ", tag.attrib['group_code'])
+                # print(" group_code: ", tag.attrib['group_code'])
                 return tag.attrib['group_code']
 
 
 class ScanValidator:
     def __init__(self, scan):
-        print('__ScanValidator__')
-        print(' scan : ', scan)
+        # print('__ScanValidator__')
+        # print(' scan : ', scan)
         self.scan = scan
         self.scan_len = len(self.scan)
 
     def check_len(self):
         if self.scan_len <= 20:
-            print(' Scan len <= 20 Warn')
+            # print(' Scan len <= 20 Warn')
             return False
         else:
             return True
 
     def check_gs(self):
         gs_pos = self.scan.find(chr(29))
-        print(' gs_pos = ', gs_pos)
+        # print(' gs_pos = ', gs_pos)
 
         if gs_pos == -1:
-            print(' Нет символа GS Warn')
+            # print(' Нет символа GS Warn')
             return False
         else:
             return True
@@ -137,7 +137,7 @@ class ScanValidator:
 
     def check_group(self, group):
         if group not in self.scan:
-            print(" Нет группы в скане")
+            # print(" Нет группы в скане")
             return False
         return True
 
@@ -152,6 +152,8 @@ class ThriftImpl(QObject):
 
     def scanner_status(self, state):
         self.scanner_state_signal.emit(state)
+
+
 
 class SlaveGui(QMainWindow, design.Ui_MainWindow):
     def __init__(self):
@@ -252,6 +254,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             self.serial.clear()
             self.serial.readyRead.connect(self.on_serial_read)
             self.serial.write(b'Hello' + bytes('\n'.encode()))
+            print(" Send to comport: ", "Hello")
             #self.serial.write(b'Start' + bytes('\n'.encode()))
         else:
             self.log("Ошибка! Не получилось подключиться к ком порту!")
@@ -290,7 +293,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
     def name_text_changed(self, rus_name_and_date):
         print('__name_text_changed__')
-        print(' rus_name_and_date: ', rus_name_and_date)
+        # print(' rus_name_and_date: ', rus_name_and_date)
 
         if rus_name_and_date == "":
             print(' empty ')
@@ -299,12 +302,12 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         name = rus_name_and_date.split(":")[0]
         date = rus_name_and_date.split(":")[1]
-        print(' name: ', name)
+        # print(' name: ', name)
         task_n, plan = self.tasks.get(self.xml_parser.get_eng_name(name) + ":" + date)
         self.plan_label.setText(plan)
-        print(' plan: ', plan)
-        print(' task: ', task_n)
-        print(' date: ', date)
+        # print(' plan: ', plan)
+        # print(' task: ', task_n)
+        # print(' date: ', date)
         self.log(' Текущее задание: %s' % rus_name_and_date)
 
     def get_current_task_info(self):
@@ -403,13 +406,14 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                 print('previously scanner read scan failed')
                 self.defect_counter = self.defect_counter + 1
                 self.serial.write(b'brak' + bytes('\n'.encode()))  #  self.serial.write(bytes([98, 114, 97, 107, 10]))  # brak/n
+                print(" Send to comport: ", "brak")
         elif readbytes == b'ON\r\n':
             print('On processed')
         elif readbytes == b'OFF\r\n':
             print('OFF processed')
 
     def scan(self, scan):
-        print('__scan__')
+        # print('__scan__')
         if not self.ki_filename:
             self.log_error("Нет файла! Необходимо нажать \"Начать\" для создания файла")
             return
@@ -438,7 +442,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             return
 
         self.product_passed_dt = datetime.now()
-        print(' product_passed_dt: ', self.product_passed_dt)
+        # print(' product_passed_dt: ', self.product_passed_dt)
 
         scan_validator = ScanValidator(scan)
 
@@ -474,6 +478,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         print(" Скан валидный")
         self.scan_counter = self.scan_counter + 1
         self.serial.write(b'good' + bytes('\n'.encode()))
+        print(" Send to comport: ", "good")
 
         with open(self.ki_filename, "a") as ki_file:
             ki_file.write(scan + "\n")
@@ -647,7 +652,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             # print("len(reply.data[4:len(reply.data) - 4 - 1]): ", len(reply.data[4:len(reply.data)]))
             body = reply.data[4:len(reply.data)].decode()
             # print("body ", type(body)) # str
-            print(" body: ", body)
+            # print(" body: ", body)
 
             if msg_type == 4:
                 # tasks = body.split(";")[0]
