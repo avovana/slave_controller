@@ -193,6 +193,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.sensor_counter = 0
         self.scan_counter = 0
         self.defect_counter = 0
+        self.scan_read_success = False
         self.m_scanner_status = ScannerStatus.Stop
 
         self.correct_file = False
@@ -397,10 +398,12 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             duration_in_ms = duration.total_seconds() * 1000
             # print('duration_in_ms: ', duration_in_ms)
 
-            if self.sensor_counter == self.scan_counter + self.defect_counter:
-                print(' previously scanner read scan success')
+            #if self.sensor_counter == self.scan_counter + self.defect_counter:
+            if self.scan_read_success:
+                print(' Scan passed success')
+                self.scan_read_success = False
             else:
-                print(' previously scanner read scan failed')
+                print(' Scan passed fail')
                 self.defect_counter = self.defect_counter + 1
                 self.serial.write(b'brak' + bytes('\n'.encode()))  #  self.serial.write(bytes([98, 114, 97, 107, 10]))  # brak/n
                 print(" Send to comport: ", "brak")
@@ -426,7 +429,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                 lines = f.readlines()
 
             print(' lines : ', lines)
-            lines.remove(scan + "\n")
+            lines.remove(scan + "\n") # if we didn't find it?
 
             with open(self.ki_filename, 'w') as f:
                 for line in lines:
@@ -478,6 +481,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         print(" Скан валидный")
         self.scan_counter = self.scan_counter + 1
+        self.scan_read_success = True
         self.serial.write(b'good' + bytes('\n'.encode()))
         print(" Send to comport: ", "good")
 
