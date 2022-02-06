@@ -14,6 +14,8 @@ import design
 from datetime import datetime
 from threading import Thread
 import threading
+import random
+import string
 
 import time
 from shutil import copyfile
@@ -312,7 +314,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.log(' Текущее задание: %s' % rus_name_and_date)
 
     def get_current_task_info(self):
-        print('__get_current_task_info__')
+        # print('__get_current_task_info__')
         rus_name_and_date = self.name_combobox.currentText()
         rus_name, date = rus_name_and_date.split(":")
         eng_name = self.xml_parser.get_eng_name(rus_name)
@@ -367,7 +369,13 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.current_label.setText(str(self.scan_counter))
 
     def send_scan_test(self):
-        scan = "0104629418600167215/lfI,933yJ9"
+        # scan = "0104629418600167215/lfI,933yJ9"
+
+        # scan = "0104629418600167215/lfI,"
+        # scan = scan.join([random.choice(string.ascii_letters) for n in range(6)])
+
+        scan = "0104629418600167215/lfI,933yJ"
+        scan = scan + random.choice(string.ascii_letters)
         self.scan(scan)
 
     def correct_file(self):
@@ -479,8 +487,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                 self.log('Не соответствует товарный группе')
                 return
 
-        print(" Скан валидный")
         self.scan_counter = self.scan_counter + 1
+        print(" Скан валидный. № " + str(self.scan_counter))
         self.scan_read_success = True
         self.serial.write(b'good' + bytes('\n'.encode()))
         print(" Send to comport: ", "good")
@@ -488,7 +496,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         with open(self.ki_filename, "a") as ki_file:
             ki_file.write(scan + "\n")
 
-        self.log('Скан записан в файл')
+        self.log('Скан ' + str(self.scan_counter) + ' записан в файл')
         self.current_label.setText(str(self.scan_counter))
 
         line_number = self.line_number_combobox.currentText()
@@ -728,24 +736,30 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             pass
 
     def log(self, msg):
+        # time_t = datetime.now().time()
+        time_t = datetime.now().strftime('%H:%M:%S')
         timestamp = '[%010.3f]' % time.process_time()
         # self.text_browser.append(timestamp + ' ' + str(msg))
         cursor = self.text_browser.textCursor()
-        cursor.insertHtml('''<p><span style="color: black;">{0} {1} </span><br>'''.format(timestamp, msg))
+        cursor.insertHtml('''<p><span style="color: black;">{0} {1} </span><br>'''.format(time_t, msg))
         cursor = self.text_browser.textCursor()
         self.text_browser.moveCursor(QTextCursor.End)
 
     def log_success(self, msg):
+        # time_t = datetime.now().time()
+        time_t = datetime.now().strftime('%H:%M:%S')
         timestamp = '[%010.3f]' % time.process_time()
         cursor = self.text_browser.textCursor()
-        cursor.insertHtml('''<p><span style="font-size: 18pt; color: green;">{0} {1} </span><br>'''.format(timestamp, msg))
+        cursor.insertHtml('''<p><span style="font-size: 18pt; color: green;">{0} {1} </span><br>'''.format(time_t, msg))
         self.text_browser.moveCursor(QTextCursor.End)
         # self.text_browser.append(timestamp + ' ' + str(msg))
 
     def log_error(self, msg):
+        time_t = datetime.now().strftime('%H:%M:%S')
+        # time_t = datetime.now().time()
         timestamp = '[%010.3f]' % time.process_time()
         cursor = self.text_browser.textCursor()
-        cursor.insertHtml('''<p><span style="font-size: 18pt; color: red;">{0} {1} </span><br>'''.format(timestamp, msg))
+        cursor.insertHtml('''<p><span style="font-size: 18pt; color: red;">{0} {1} </span><br>'''.format(time_t, msg))
         self.text_browser.moveCursor(QTextCursor.End)
 
 
