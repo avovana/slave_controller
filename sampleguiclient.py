@@ -16,6 +16,7 @@ from threading import Thread
 import threading
 import random
 import string
+import psycopg2
 
 import time
 from shutil import copyfile
@@ -51,10 +52,15 @@ class Config:
         self.comport = self.config['comport']
         self.host = self.config['server']['host']
         self.port = self.config['server']['port']
+        self.postgres_host = self.config['postgres']['host']
+        self.postgres_user = self.config['postgres']['user']
+        self.postgres_password = self.config['postgres']['password']
+        self.postgres_write_to_db = self.config['postgres']['write_to_db']
         self.scanner_path = self.config['scanner_path']
         self.position_path = self.config['position_path']
         self.line_number = self.config['line_number']
         self.check_group_code = self.config['check_group_code']
+        self.check_comport = self.config['check_comport']
 
         print("__config__")
         print(" comport: ", self.comport)
@@ -63,6 +69,11 @@ class Config:
         print(" scanner_path: ", self.scanner_path)
         print(" position_path: ", self.position_path)
         print(" check_group_code: ", self.check_group_code)
+        print(" check_comport: ", self.check_comport)
+        print(" postgres_host: ", self.postgres_host)
+        print(" postgres_user: ", self.postgres_user)
+        print(" postgres_password: ", self.postgres_password)
+        print(" postgres_write_to_db: ", self.postgres_write_to_db)
 
 
 config = Config()
@@ -500,8 +511,28 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.current_label.setText(str(self.scan_counter))
 
         line_number = self.line_number_combobox.currentText()
+        self.write_db(line_number, eng_name, date, self.scan_counter, plan)
+
+
         self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 2, int(line_number), self.current_label.text(), int(task_n)))
         print(" Отправлено оповещение об инкременте скана")
+
+    def write_db(self, line_number, eng_name, release_date, current, plan):
+        if config.postgres_write_to_db:
+            conn = None
+            try:
+                conn = psycopg2.connect(user="postgres", password="vovka13", host="192.168.110.1")
+
+                cur = conn.cursor()
+                cur.execute("insert into lines_current (line, production, release_date, current, plan) values (%s, %s, %s, %s, %s) ON CONFLICT(production, release_date) DO UPDATE set current = excluded.current, plan = excluded.plan", (line_number, self.xml_parser.get_rus_name(eng_name), release_date, current, plan))
+                conn.commit()
+                cur.close()
+                print("write to db")
+            except (Exception, psycopg2.DatabaseError) as error:
+                print(error)
+            finally:
+                if conn is not None:
+                    conn.close()
 
     def scanner_status(self, status):
         self.m_scanner_status = status
@@ -693,6 +724,9 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
                     self.log(' Добавлено задание: %s' % self.xml_parser.get_rus_name(eng_name) + ":" + date)
                     self.name_combobox.addItem(self.xml_parser.get_rus_name(eng_name) + ":" + date)
+
+                    line_number = self.line_number_combobox.currentText()
+                    self.write_db(line_number, eng_name, date, 0, plan)
 
                 self.log('Выбрать задание и нажать \"Начать\"')
                 # self.log('Ожидание стартового сигнала для %s' % self.xml_parser.get_rus_name(eng_name) + ":" + date)

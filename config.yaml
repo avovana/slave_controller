@@ -2,7 +2,13 @@ comport: 0
 server:
     host: localhost
     port: 6000
+postgres:
+    host: 192.168.110.1
+    user: postgres
+    password: vovka13
+    write_to_db: Yes
 scanner_path: /home/vova/slave_controller/scanner
 position_path: /home/vova/build-master_labeling/positions.xml
 line_number: 1
 check_group_code: Yes
+check_comport: Yes
