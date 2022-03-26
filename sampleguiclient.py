@@ -524,7 +524,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                 conn = psycopg2.connect(user=config.postgres_user, password=config.postgres_password, host=config.postgres_host)
 
                 cur = conn.cursor()
-                cur.execute("insert into lines_current (line, production, release_date, current, plan) values (%s, %s, %s, %s, %s) ON CONFLICT(production, release_date) DO UPDATE set current = excluded.current, plan = excluded.plan", (line_number, self.xml_parser.get_rus_name(eng_name), release_date, current, plan))
+                cur.execute("insert into production (line, production, current, plan) values (%s, %s, %s, %s)", (line_number, self.xml_parser.get_rus_name(eng_name) + ":" + release_date, current, plan))
                 conn.commit()
                 cur.close()
                 print("write to db")
