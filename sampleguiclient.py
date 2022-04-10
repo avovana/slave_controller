@@ -199,7 +199,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         # self.choose_file_pushbutton.hide()
         # self.auto_choose_combobox.hide()
         # self.start_auto_button.hide()
-
+        self.apply_colores()
         self.scanner_status_checkbox.setEnabled(False)
 
         self.create_timers()
@@ -284,8 +284,6 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             if returnValue == QMessageBox.Ok:
                 print('OK clicked')
                 self.exit()
-
-        self.apply_colores()
 
     def exit(self):
         print('in exit')
