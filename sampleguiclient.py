@@ -61,6 +61,7 @@ class Config:
         self.line_number = self.config['line_number']
         self.check_group_code = self.config['check_group_code']
         self.check_comport = self.config['check_comport']
+        self.company = self.config['company_name']
 
         print("__config__")
         print(" comport: ", self.comport)
@@ -284,10 +285,34 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                 print('OK clicked')
                 self.exit()
 
+        self.apply_colores()
+
     def exit(self):
         print('in exit')
         self.exit_button.setStyleSheet("background-color: green")
         self.close()
+
+    def apply_colores(self):
+        if config.company == "imperia":
+            self.scanner_status_checkbox.setStyleSheet("QCheckBox{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
+            self.comport_status_checkbox.setStyleSheet("QCheckBox{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
+            self.line_number_label.setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
+            self.line_number_combobox.setStyleSheet("QComboBox{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
+            self.connect_button.setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
+            self.ready_button.setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
+            self.start_button.setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
+            self.product_name_label.setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
+            self.plan_label_2.setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
+            self.name_combobox.setStyleSheet("QComboBox{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
+            self.product_name_label.setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
+            self.plan_label.setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
+            self.current_label.setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
+            self.current_label_2.setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
+            self.choose_file_pushbutton.setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
+            self.correct_file_button.setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
+            self.finish_button.setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
+            self.exit_button.setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
+
 
     def auto_handling(self):
         self.auto_choose_combobox.show()
