@@ -301,11 +301,11 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             self.start_button.setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
             self.product_name_label.setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
             self.plan_label_2.setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
+            self.current_label_2.setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
             self.name_combobox.setStyleSheet("QComboBox{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
             self.product_name_label.setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
-            self.plan_label.setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
-            self.current_label.setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
-            self.current_label_2.setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
+            self.plan_label.setStyleSheet("QLabel{font-size: 64px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
+            self.current_label.setStyleSheet("QLabel{font-size: 64px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
             self.choose_file_pushbutton.setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
             self.correct_file_button.setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
             self.finish_button.setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
@@ -334,7 +334,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         if rus_name_and_date == "":
             print(' empty ')
-            self.ready_button.setStyleSheet("background-color: rgb(141, 255, 255);")
+            self.ready_button.setStyleSheet("background-color: rgb(66, 193, 152);")
             return
 
         name = rus_name_and_date.split(":")[0]
@@ -419,7 +419,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             self.correct_file_button.setStyleSheet("background-color: green")
         else:
             self.correct_file = False
-            self.correct_file_button.setStyleSheet("background-color: rgb(141, 255, 255)")
+            self.correct_file_button.setStyleSheet("background-color: rgb(66, 193, 152)")
             self.log('Режим корректировки выключен')
 
     def on_serial_read(self):
@@ -678,7 +678,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                     self.log_error("Ошибка соединения")
                     self.log_error("ОШИБКА: Нет ответа. Пробую переподключиться")
                     self.client.cmd_q.put(ClientCommand(ClientCommand.CONNECT, 1, int(config.line_number), SERVER_ADDR))
-                    self.finish_button.setStyleSheet("background-color: rgb(141, 255, 255);")
+                    self.finish_button.setStyleSheet("background-color: rgb(66, 193, 152);")
                     # while working not needed to request data after connection recover
                     # self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 1, int(config.line_number)))
                     # self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE, 10000))  # Wait info
@@ -782,7 +782,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                 self.start_button.setDisabled(False)
                 self.ki_filename = ""
                 self.name_combobox.removeItem(self.name_combobox.currentIndex())
-                self.finish_button.setStyleSheet("background-color: rgb(141, 255, 255);")
+                self.finish_button.setStyleSheet("background-color: rgb(66, 193, 152);")
                 self.current_label.setText("")
                 self.plan_label.setText("")
                 self.scan_counter = 0
