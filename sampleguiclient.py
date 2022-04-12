@@ -287,7 +287,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
     def exit(self):
         print('in exit')
-        self.exit_button.setStyleSheet("background-color: green")
+        self.exit_button.setStyleSheet("background-color: rgb(66, 193, 152)")
         self.close()
 
     def apply_colores(self):
@@ -416,7 +416,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         if not self.correct_file:
             self.correct_file = True
             self.log('Режим корректировки включен')
-            self.correct_file_button.setStyleSheet("background-color: green")
+            self.correct_file_button.setStyleSheet("background-color: rgb(66, 193, 152)")
         else:
             self.correct_file = False
             self.correct_file_button.setStyleSheet("background-color: rgb(66, 193, 152)")
@@ -594,20 +594,20 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                 print('OK clicked')
             return
 
-        self.connect_button.setStyleSheet("background-color: green")
+        self.connect_button.setStyleSheet("background-color: rgb(66, 193, 152)")
         line_number = self.line_number_combobox.currentText()
         self.client.cmd_q.put(ClientCommand(ClientCommand.CONNECT, 1, int(line_number), SERVER_ADDR))
 
     def send_ready(self):
         print("__send_ready__")
-        self.ready_button.setStyleSheet("background-color: green")
+        self.ready_button.setStyleSheet("background-color: rgb(66, 193, 152)")
         line_number = self.line_number_combobox.currentText()
         self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 1, int(line_number)))
         self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE,10000))  # Wait info
 
     def send_file(self):
         print("__send_file__")
-        self.finish_button.setStyleSheet("background-color: green")
+        self.finish_button.setStyleSheet("background-color: rgb(66, 193, 152)")
         line_number = self.line_number_combobox.currentText()
 
         # name_rus = self.name_combobox.currentText()
@@ -807,7 +807,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         time_t = datetime.now().strftime('%H:%M:%S')
         timestamp = '[%010.3f]' % time.process_time()
         cursor = self.text_browser.textCursor()
-        cursor.insertHtml('''<p><span style="font-size: 18pt; color: green;">{0} {1} </span><br>'''.format(time_t, msg))
+        cursor.insertHtml('''<p><span style="font-size: 18pt; color: rgb(66, 193, 152);">{0} {1} </span><br>'''.format(time_t, msg))
         self.text_browser.moveCursor(QTextCursor.End)
         # self.text_browser.append(timestamp + ' ' + str(msg))
 
