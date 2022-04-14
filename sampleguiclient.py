@@ -62,6 +62,7 @@ class Config:
         self.check_group_code = self.config['check_group_code']
         self.check_comport = self.config['check_comport']
         self.company = self.config['company_name']
+        self.auto_start_same_product = self.config['auto_start_same_product']
 
         print("__config__")
         print(" comport: ", self.comport)
@@ -75,6 +76,7 @@ class Config:
         print(" postgres_user: ", self.postgres_user)
         print(" postgres_password: ", self.postgres_password)
         print(" postgres_write_to_db: ", self.postgres_write_to_db)
+        print(" auto_start_same_product: ", self.auto_start_same_product)
 
 
 config = Config()
@@ -191,11 +193,10 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.choose_file_pushbutton.clicked.connect(self.choose_file)
         # self.choose_file_pushbutton.clicked.connect(self.send_scan_test)
         self.correct_file_button.clicked.connect(self.correct_file)
-        self.name_combobox.currentTextChanged.connect(self.name_text_changed)
+        self.name_combobox.currentIndexChanged.connect(self.name_index_changed)
         self.start_button.clicked.connect(self.start_work)
         self.exit_button.clicked.connect(self.exit)
         # self.auto_button.clicked.connect(self.auto_handling)
-        # self.start_auto_button.clicked.connect(self.auto_set_create_file)
         # self.choose_file_pushbutton.hide()
         # self.auto_choose_combobox.hide()
         # self.start_auto_button.hide()
@@ -226,19 +227,10 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.product_passed_dt = datetime.now()
 
         self.tasks = {}
+        self.index_to_task_n = {}
 
         self.line_number_combobox.setItemText(0, str(config.line_number))
         self.line_number_combobox.setEnabled(False)
-
-        # body = "1,prod1,20;2,prod2,30"
-        #
-        # tasks = body.split(";")
-        #
-        # for idx, value in enumerate(tasks):
-        #     task, name, plan = value.split(",")
-        #     self.tasks[task] = (name, plan)
-        #
-        # self.log(tasks)
 
         #-----------------Serial Port-----------------
         available_ports = QSerialPortInfo.availablePorts()
@@ -320,47 +312,36 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.ready_button.hide()
         self.auto_state = True
 
-    def auto_set_create_file(self):
-        eng_name = self.xml_parser.get_eng_name(self.auto_choose_combobox.currentText())
-        date_time = datetime.now().strftime("%H-%M")
-        self.ki_filename = eng_name + '__' + date_time + '.csv'
-        print("self.ki_filename: ", self.ki_filename)
-        self.tasks[eng_name] = (1, 0, date_time)
-        self.log('Файл для сканов: %s' % self.ki_filename)
+    def name_index_changed(self, index):
+        print('name_index_changed')
+        print(' index: ', index)
+        print(' self.name_combobox.currentIndex(): ', self.name_combobox.currentIndex())
 
-    def name_text_changed(self, rus_name_and_date):
-        print('__name_text_changed__')
-        # print(' rus_name_and_date: ', rus_name_and_date)
-
-        if rus_name_and_date == "":
-            print(' empty ')
+        if index == -1:
+            print(' empty name_combobox')
             self.ready_button.setStyleSheet("background-color: rgb(66, 193, 152);")
             return
 
-        name = rus_name_and_date.split(":")[0]
-        date = rus_name_and_date.split(":")[1]
-        # print(' name: ', name)
-        task_n, plan = self.tasks.get(self.xml_parser.get_eng_name(name) + ":" + date)
+        task_n = self.index_to_task_n.get(index)
+        print(' task_n: ', task_n)
+        eng_name, date, task_n, plan = self.tasks.get(task_n)
+
+        rus_name_and_date = self.xml_parser.get_rus_name(eng_name) + ":" + date
+
         self.plan_label.setText(plan)
-        # print(' plan: ', plan)
-        # print(' task: ', task_n)
-        # print(' date: ', date)
+        print(' plan: ', plan)
+        print(' task: ', task_n)
+        print(' date: ', date)
         self.log(' Текущее задание: %s' % rus_name_and_date)
 
     def get_current_task_info(self):
-        # print('__get_current_task_info__')
-        rus_name_and_date = self.name_combobox.currentText()
-        rus_name, date = rus_name_and_date.split(":")
-        eng_name = self.xml_parser.get_eng_name(rus_name)
-        eng_name_and_date = eng_name + ":" + date
-        task_n, plan = self.tasks.get(eng_name_and_date)
-        # print(' rus_name_and_date: ', rus_name_and_date)
-        # print(' rus_name: ', rus_name)
-        # print(' date: ', date)
-        # print(' eng_name: ', eng_name)
-        # print(' eng_name_and_date: ', eng_name_and_date)
-        # print(' plan: ', plan)
-        # print(' task: ', task_n)
+        print(' __get_current_task_info__')
+        task_n = self.index_to_task_n.get(self.name_combobox.currentIndex())
+        eng_name, date, task_n, plan = self.tasks.get(task_n)
+        # print('  date: ', date)
+        # print('  eng_name: ', eng_name)
+        # print('  plan: ', plan)
+        # print('  task: ', task_n)
 
         return eng_name, task_n, plan, date
 
@@ -369,18 +350,18 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         # self.choose_file_pushbutton.setDisabled(True)
         self.name_combobox.setDisabled(True)
         self.start_button.setDisabled(True)
+        self.finish_button.setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}")
 
         eng_name, task_n, plan, date = self.get_current_task_info()
 
+        print(' task: ', task_n)
         date_time = datetime.now().strftime("%H-%M")
         self.ki_filename = self.ki_filename if self.ki_filename != "" else eng_name + '__' + date_time + '.csv'
         self.log('Файл для сканов: %s' % self.ki_filename)
         self.log('Дата: %s' % date)
-        self.plan_label.setText(plan)
         # self.log('Ожидание стартового сигнала для %s' % self.name_combobox.currentText())
         # self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE, 10000))  # Wait start_signal
 
-        eng_name, task_n, plan, date = self.get_current_task_info()
         line_number = self.line_number_combobox.currentText()
         self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 4, int(line_number), self.current_label.text(), int(task_n)))
         self.log_success('Отправлен сигнал о начале работы')
@@ -536,9 +517,13 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         line_number = self.line_number_combobox.currentText()
         self.write_db(line_number, eng_name, date, self.scan_counter, plan)
 
-
         self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 2, int(line_number), self.current_label.text(), int(task_n)))
         print(" Отправлено оповещение об инкременте скана")
+
+        if config.auto_start_same_product and self.scan_counter == int(plan):
+            print("auto send")
+            time.sleep(1) # need to wait "send OK"... dont understand yet why
+            self.send_file()
 
     def write_db(self, line_number, eng_name, release_date, current, plan):
         if config.postgres_write_to_db:
@@ -608,19 +593,20 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
     def send_file(self):
         print("__send_file__")
         self.finish_button.setStyleSheet("background-color: rgb(66, 193, 152)")
+
         line_number = self.line_number_combobox.currentText()
 
-        # name_rus = self.name_combobox.currentText()
-        # name_eng = self.xml_parser.get_eng_name(name_rus) if not self.auto_state else self.xml_parser.get_eng_name(self.auto_choose_combobox.currentText())
-        # print(" current name_rus: ", name_rus)
-        # print("         name_eng: ", name_eng)
+        name_rus = self.name_combobox.currentText()
+        name_eng = self.xml_parser.get_eng_name(name_rus) if not self.auto_state else self.xml_parser.get_eng_name(self.auto_choose_combobox.currentText())
+        print(" current name_rus: ", name_rus)
+        print("         name_eng: ", name_eng)
 
-        # task, plan, date = self.tasks.get(name_eng)
-        # print(" task: ", task)
-        # print(" plan: ", plan)
-        # print(" date: ", date)
+        task, plan, date = self.tasks.get(name_eng)
+        print(" task: ", task)
+        print(" plan: ", plan)
+        print(" date: ", date)
 
-        # date_time = datetime.now().strftime("%d.%m.%Y")
+        date_time = datetime.now().strftime("%d.%m.%Y")
 
         eng_name, task_n, plan, date = self.get_current_task_info()
 
@@ -640,7 +626,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                     counter += 1
 
             print(" scans: ", counter)
-            print(" Считаны данные из файла ", read_bytes)
+            # print(" Считаны данные из файла ", read_bytes)
 
             self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 3, int(line_number), read_bytes, int(task_n)))
             self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE,3))  # Wait confirm, 3 for file... # better 3 means sec # no 3 timeout socket attempts
@@ -730,47 +716,23 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                     print(task)
 
                     task_n, eng_name, plan, date = task.split(":")
-                    self.tasks[eng_name + ":" + date] = (task_n, plan)
-                    # for idx, value in enumerate(tasks):
-                    #     task, name, plan = value.split(",")
-                    #     self.tasks[name] = (task, plan)
-                    #     print("name: ", name)
-                    #     print("task: ", task)
-                    #     print("plan: ", plan)
-                    #     self.name_combobox.addItem(name)
+                    self.tasks[task_n] = (eng_name, date, task_n, plan)
 
-                    # plan, task = self.tasks.get(str)
                     print(' plan: ', plan)
                     print(' task: ', task_n)
                     print(' name: ', eng_name)
                     print(' date: ', date)
 
                     self.log(' Добавлено задание: %s' % self.xml_parser.get_rus_name(eng_name) + ":" + date)
+                    print(' added task: ', self.xml_parser.get_rus_name(eng_name) + ":" + date)
+                    print(' index going to be: ', self.name_combobox.count())
+                    self.index_to_task_n[self.name_combobox.count()] = task_n
                     self.name_combobox.addItem(self.xml_parser.get_rus_name(eng_name) + ":" + date)
-
                     line_number = self.line_number_combobox.currentText()
                     self.write_db(line_number, eng_name, date, 0, plan)
 
                 self.log('Выбрать задание и нажать \"Начать\"')
                 # self.log('Ожидание стартового сигнала для %s' % self.xml_parser.get_rus_name(eng_name) + ":" + date)
-            elif msg_type == 6:
-                second4bytes = reply.data[4:8]
-                task_n = int.from_bytes(second4bytes, byteorder='big', signed=False)
-                print(' task_n: ', task_n)
-
-                for name_and_date, task_info in self.tasks.items():
-                    print(' ----------- ')
-                    name = name_and_date.split(":")[0]
-                    date = name_and_date.split(":")[1]
-                    task_n_dic, plan = task_info
-                    print(' plan:          ', plan)
-                    print(' task_n_dic:    ', task_n_dic)
-                    print(' name:          ', name)
-                    print(' date:          ', date)
-
-                    if task_n == int(task_n_dic):
-                        print(' Можно начинать')
-                        self.log_success('Можно начинать: %s' % self.xml_parser.get_rus_name(name) + ":" + date)
             elif msg_type == 8:
                 self.log_error('Задачи еще не созданы')
             elif msg_type == 10:
@@ -778,16 +740,59 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                 print(' self.name_combobox.currentIndex() = ', self.name_combobox.currentIndex())
                 print(' self.name_combobox.currentText()  = ', self.name_combobox.currentText())
                 self.log_success('Файл доставлен. Задание завершено.')
+
                 self.name_combobox.setDisabled(False)
                 self.start_button.setDisabled(False)
                 self.ki_filename = ""
-                self.name_combobox.removeItem(self.name_combobox.currentIndex())
+
                 self.finish_button.setStyleSheet("background-color: rgb(66, 193, 152);")
                 self.current_label.setText("")
                 self.plan_label.setText("")
                 self.scan_counter = 0
                 self.defect_counter = 0
                 self.sensor_counter = 0
+
+                # remove from map current index (0)
+                # get index with the same product name (1)
+                # set new index as current (1)
+                # remove prev index (0)
+                # current that is 1 will came 0
+
+                # =>
+                # remember product name
+                # remove from map current index (0)
+                # all indexes will change
+                # map will be invalidated
+                # will be invalidated only those that were after it
+                # 0 1 2 3 4 5
+                #       |
+                # =>
+                # 0 1 2   4 5
+                #       |
+                # =>
+                # 0 1 2 3 4
+                #       |
+                # So I need to -1 every that is after him:
+                # should find them(4,5), remove from the map, remove this finished(3), mimus them 4-1, 5-1 and added to the map
+                last_index = self.name_combobox.count() - 1 # 5
+                curr_index = self.name_combobox.currentIndex() # 3
+                curr_text = self.name_combobox.itemText(curr_index)
+
+                for index in range(self.name_combobox.count()): # 0 -> 5
+                    if index == curr_index:
+                        del self.index_to_task_n[self.name_combobox.currentIndex()] # remove key = 3
+                    if index > curr_index:
+                        self.index_to_task_n[index - 1] = self.index_to_task_n.get(index)
+
+                self.name_combobox.removeItem(self.name_combobox.currentIndex())
+
+                for i in range(self.name_combobox.count()):
+                    if self.name_combobox.itemText(i) == curr_text:
+                        print(' i...........', i)
+                        self.name_combobox.setCurrentIndex(i)
+
+                if config.auto_start_same_product and self.name_combobox.count() != 0:
+                    self.start_work()
 
         except queue.Empty:
             pass

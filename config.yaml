@@ -10,5 +10,7 @@ postgres:
 scanner_path: /home/vova/slave_controller/scanner
 position_path: /home/vova/build-master_labeling/positions.xml
 line_number: 1
-check_group_code: Yes
+check_group_code: No
 check_comport: Yes
+company_name: imperia
+auto_start_same_product: Yes
