@@ -63,6 +63,7 @@ class Config:
         self.check_comport = self.config['check_comport']
         self.company = self.config['company_name']
         self.auto_start_same_product = self.config['auto_start_same_product']
+        self.test = self.config['test']
 
         print("__config__")
         print(" comport: ", self.comport)
@@ -77,6 +78,7 @@ class Config:
         print(" postgres_password: ", self.postgres_password)
         print(" postgres_write_to_db: ", self.postgres_write_to_db)
         print(" auto_start_same_product: ", self.auto_start_same_product)
+        print(" test: ", self.test)
 
 
 config = Config()
@@ -190,8 +192,10 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.connect_button.clicked.connect(self.send_connect)
         self.ready_button.clicked.connect(self.send_ready)
         self.finish_button.clicked.connect(self.send_file)
-        self.choose_file_pushbutton.clicked.connect(self.choose_file)
-        # self.choose_file_pushbutton.clicked.connect(self.send_scan_test)
+        if not config.test:
+            self.choose_file_pushbutton.clicked.connect(self.choose_file)
+        else:
+            self.choose_file_pushbutton.clicked.connect(self.send_scan_test)
         self.correct_file_button.clicked.connect(self.correct_file)
         self.name_combobox.currentIndexChanged.connect(self.name_index_changed)
         self.start_button.clicked.connect(self.start_work)
@@ -577,7 +581,9 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             returnValue = msgBox.exec()
             if returnValue == QMessageBox.Ok:
                 print('OK clicked')
-            return
+
+            if not config.test:
+                return
 
         self.connect_button.setStyleSheet("background-color: rgb(66, 193, 152)")
         line_number = self.line_number_combobox.currentText()
@@ -594,17 +600,17 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         print("__send_file__")
         self.finish_button.setStyleSheet("background-color: rgb(66, 193, 152)")
 
-        line_number = self.line_number_combobox.currentText()
+        line_number = self.line_number_combobox.currentText() # TODO -> self.line_number
 
-        name_rus = self.name_combobox.currentText()
-        name_eng = self.xml_parser.get_eng_name(name_rus) if not self.auto_state else self.xml_parser.get_eng_name(self.auto_choose_combobox.currentText())
-        print(" current name_rus: ", name_rus)
-        print("         name_eng: ", name_eng)
-
-        task, plan, date = self.tasks.get(name_eng)
-        print(" task: ", task)
-        print(" plan: ", plan)
-        print(" date: ", date)
+        # name_rus = self.name_combobox.currentText()
+        # name_eng = self.xml_parser.get_eng_name(name_rus) if not self.auto_state else self.xml_parser.get_eng_name(self.auto_choose_combobox.currentText())
+        # print(" current name_rus: ", name_rus)
+        # print("         name_eng: ", name_eng)
+        #
+        # task, plan, date = self.tasks.get(name_eng)
+        # print(" task: ", task)
+        # print(" plan: ", plan)
+        # print(" date: ", date)
 
         date_time = datetime.now().strftime("%d.%m.%Y")
 

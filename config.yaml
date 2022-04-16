@@ -14,3 +14,4 @@ check_group_code: No
 check_comport: Yes
 company_name: imperia
 auto_start_same_product: Yes
+test: Yes
