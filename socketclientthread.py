@@ -116,7 +116,7 @@ class SocketClientThread(threading.Thread):
 
     #  def _handle_SEND_ready(self, cmd):
     def _handle_SEND(self, cmd):
-        print("__handle_SEND__")
+        # print("Send to socket:")
 
         # msg_type = struct.pack('>b', cmd.data[0])
         #msg_type = cmd.data[0]
@@ -145,20 +145,24 @@ class SocketClientThread(threading.Thread):
 
         if cmd.data:
             header = struct.pack('>L', 3 + len(cmd.data))
-            print(" len: ", len(cmd.data))
+            # print(" len: ", len(cmd.data))
+            # print(" header: ", header)
         else:
             header = struct.pack('>L', 3)
+            # print(" header: ", header)
 
         try:
             if cmd.data is None:
                 self.socket.sendall(header + struct.pack('>b', cmd.msg_type) + struct.pack('>b', cmd.line_number) + struct.pack('>b', cmd.task))
+                print(" Send to socket. header: {0} OK".format(header))
             else:
                 self.socket.sendall(header + struct.pack('>b', cmd.msg_type) + struct.pack('>b', cmd.line_number) + struct.pack('>b', cmd.task) + cmd.data.encode())
+                print(" Send to socket. header: {0}, len: {1}, data: {2}, status: OK".format(header, len(cmd.data), cmd.data))
 
             # self.reply_q.put(self._success_reply("Отправлено"))
-            print(" send OK")
+
         except IOError as e:
-            print(" send not OK: ", str(e))
+            print(" Send to socket error: ", str(e))
             self.reply_q.put(self._error_reply(str("send_error")))
 
     def _handle_RECEIVE(self, cmd):
@@ -169,6 +173,7 @@ class SocketClientThread(threading.Thread):
             #print("--msg_len: ", msg_len)
 
             header_data = self._recv_n_bytes(4, attempts)  # если не коннектев, то исключение
+            print("header:", header_data)
             if header_data == b'':
                 # self.reply_q.put(self._error_reply(str("receive_timeout")))
                 self.reply_q.put(self._error_reply(str("connection_error")))
@@ -179,6 +184,7 @@ class SocketClientThread(threading.Thread):
             # print("msg_size: ", msg_size)
 
             body_data = self._recv_n_bytes(msg_size, attempts)  # type = bytes
+            print("body_data:", body_data)
 
             # print("type 1: ", type(body_data))
 
@@ -221,7 +227,7 @@ class SocketClientThread(threading.Thread):
         """ Convenience method for receiving exactly n bytes from self.socket
             (assuming it's open and connected).
         """
-        print("__in receive_______ attempts {0} wait {1} bytes".format(attempts, n))
+        # print("__in receive_______ attempts {0} wait {1} bytes".format(attempts, n))
         data = b''
         while len(data) < n and self.alive.isSet():
             print(" attempts {0}".format(attempts))
@@ -252,7 +258,7 @@ class SocketClientThread(threading.Thread):
 
                 data += chunk
 
-        print(" data: ", data)
+        # print(" data: ", data)
         return data
 
     def _error_reply(self, errstr):

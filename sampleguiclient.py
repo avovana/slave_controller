@@ -219,6 +219,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         # self.connect_flag = False
         # self.send_ready_flag = False
         self.auto_state = False
+        self.scan_can_be_read_now = False
+        self.scans_wait_to_proceed = []
 
         self.py_script_path = os.path.dirname(os.path.realpath(__file__))
         self.ki_filename = ""
@@ -317,31 +319,30 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.auto_state = True
 
     def name_index_changed(self, index):
-        print('name_index_changed')
-        print(' index: ', index)
-        print(' self.name_combobox.currentIndex(): ', self.name_combobox.currentIndex())
+        print(' name_index_changed:')
+        # print('  index = ', index)
+        # print('  current index = ', self.name_combobox.currentIndex())
 
         if index == -1:
-            print(' empty name_combobox')
+            print('  empty name_combobox')
             self.ready_button.setStyleSheet("background-color: rgb(66, 193, 152);")
             return
 
         task_n = self.index_to_task_n.get(index)
-        print(' task_n: ', task_n)
+        # print('  task_n: ', task_n)
         eng_name, date, task_n, plan = self.tasks.get(task_n)
 
         rus_name_and_date = self.xml_parser.get_rus_name(eng_name) + ":" + date
 
         self.plan_label.setText(plan)
-        print(' plan: ', plan)
-        print(' task: ', task_n)
-        print(' date: ', date)
+        print(" Task name {0}, number {1}, date {2}".format(eng_name, task_n, date))
         self.log(' Текущее задание: %s' % rus_name_and_date)
 
     def get_current_task_info(self):
-        print(' __get_current_task_info__')
+
         task_n = self.index_to_task_n.get(self.name_combobox.currentIndex())
         eng_name, date, task_n, plan = self.tasks.get(task_n)
+        # print(' current task: ', eng_name)
         # print('  date: ', date)
         # print('  eng_name: ', eng_name)
         # print('  plan: ', plan)
@@ -350,7 +351,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         return eng_name, task_n, plan, date
 
     def start_work(self):
-        print('__start__')
+        print('Start: ')
         # self.choose_file_pushbutton.setDisabled(True)
         self.name_combobox.setDisabled(True)
         self.start_button.setDisabled(True)
@@ -358,7 +359,8 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         eng_name, task_n, plan, date = self.get_current_task_info()
 
-        print(' task: ', task_n)
+        # print(' task: ', task_n, eng_name)
+        print(" Task name {0}, number {1}.".format(eng_name, task_n))
         date_time = datetime.now().strftime("%H-%M")
         self.ki_filename = self.ki_filename if self.ki_filename != "" else eng_name + '__' + date_time + '.csv'
         self.log('Файл для сканов: %s' % self.ki_filename)
@@ -444,10 +446,28 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         print(' defect counter = ', self.defect_counter)
 
     def scan(self, scan):
-        # print('__scan__')
-        if not self.ki_filename:
-            self.log_error("Нет файла! Необходимо нажать \"Начать\" для создания файла")
-            return
+        print('Scan received:')
+        print('', scan)
+
+        # if not self.scan_can_be_read_now:
+        #     print(' wait for self.scan_can_be_read_now')
+        #     self.scans_wait_to_proceed.append(scan_)
+        #     print(' scan added to list', scan_)
+        #     print(' list size', len(self.scans_wait_to_proceed))
+        #     return
+        # else:
+        #     self.scans_wait_to_proceed.append(scan_)
+        #     print(' added to list', scan_)
+
+
+        # for scan in self.scans_wait_to_proceed:
+        if config.auto_start_same_product:
+            if not self.ki_filename:
+                self.start_work()
+        else:
+            if not self.ki_filename:
+                self.log_error("Нет файла! Необходимо нажать \"Начать\" для создания файла")
+                return
 
 
         if self.correct_file:
@@ -517,18 +537,22 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
 
         self.log('Скан ' + str(self.scan_counter) + ' записан в файл')
         self.current_label.setText(str(self.scan_counter))
+        self.current_label.setText(str(self.scan_counter))
 
         line_number = self.line_number_combobox.currentText()
         self.write_db(line_number, eng_name, date, self.scan_counter, plan)
 
         self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 2, int(line_number), self.current_label.text(), int(task_n)))
-        print(" Отправлено оповещение об инкременте скана")
+        # print(" Отправлено оповещение об инкременте скана")
 
         if config.auto_start_same_product and self.scan_counter == int(plan):
-            print("auto send")
-            time.sleep(1) # need to wait "send OK"... dont understand yet why
+            # self.scan_can_be_read_now = False # wait until answer OK received and "start" is pushed = new file is ready
+            print(" auto send")
             self.send_file()
+            time.sleep(2)
 
+        # self.scans_wait_to_proceed.clear()
+        # print(' end read scan. list size = ', len(self.scans_wait_to_proceed))
     def write_db(self, line_number, eng_name, release_date, current, plan):
         if config.postgres_write_to_db:
             conn = None
@@ -539,7 +563,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                 cur.execute("insert into production (line, production, current, plan) values (%s, %s, %s, %s)", (line_number, self.xml_parser.get_rus_name(eng_name) + ":" + release_date, current, plan))
                 conn.commit()
                 cur.close()
-                print("write to db")
+                print(" write to db")
             except (Exception, psycopg2.DatabaseError) as error:
                 print(error)
             finally:
@@ -571,19 +595,18 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.client_reply_timer.start(100)
 
     def send_connect(self):
-        if self.m_scanner_status == ScannerStatus.Stop:
-            msgBox = QMessageBox()
-            msgBox.setIcon(QMessageBox.Information)
-            msgBox.setText("Сканер не подключен!")
-            msgBox.setWindowTitle("Предупреждение")
-            msgBox.setStandardButtons(QMessageBox.Ok)
+        if not config.test:
+            if self.m_scanner_status == ScannerStatus.Stop:
+                msgBox = QMessageBox()
+                msgBox.setIcon(QMessageBox.Information)
+                msgBox.setText("Сканер не подключен!")
+                msgBox.setWindowTitle("Предупреждение")
+                msgBox.setStandardButtons(QMessageBox.Ok)
 
-            returnValue = msgBox.exec()
-            if returnValue == QMessageBox.Ok:
-                print('OK clicked')
-
-            if not config.test:
-                return
+                returnValue = msgBox.exec()
+                if returnValue == QMessageBox.Ok:
+                    print('OK clicked')
+                    return
 
         self.connect_button.setStyleSheet("background-color: rgb(66, 193, 152)")
         line_number = self.line_number_combobox.currentText()
@@ -597,7 +620,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
         self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE,10000))  # Wait info
 
     def send_file(self):
-        print("__send_file__")
+        print("Send file:")
         self.finish_button.setStyleSheet("background-color: rgb(66, 193, 152)")
 
         line_number = self.line_number_combobox.currentText() # TODO -> self.line_number
@@ -635,7 +658,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             # print(" Считаны данные из файла ", read_bytes)
 
             self.client.cmd_q.put(ClientCommand(ClientCommand.SEND, 3, int(line_number), read_bytes, int(task_n)))
-            self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE,3))  # Wait confirm, 3 for file... # better 3 means sec # no 3 timeout socket attempts
+            self.client.cmd_q.put(ClientCommand(ClientCommand.RECEIVE,7))  # Wait confirm, 3 for file... # better 3 means sec # no 3 timeout socket attempts
             self.log(' Файл отправляется. Ожидается подтверждение доставки...')
 
         # rename if wasn't
@@ -658,7 +681,7 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
     def on_client_reply_timer(self):
         try:
             reply = self.client.reply_q.get(block=False)
-            print("__on_client_reply_timer__")
+            print("Reply:")
 
             if reply.type == ClientReply.CONNECTED:
                 self.log_success('Установлена связь')
@@ -716,10 +739,10 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
             if msg_type == 4:
                 # tasks = body.split(";")[0]
                 tasks = body.split(";")
-                print(" tasks: ", tasks)
+                print(" New tasks received: ", tasks)
 
                 for task in tasks:
-                    print(task)
+                    #print(' ', task)
 
                     task_n, eng_name, plan, date = task.split(":")
                     self.tasks[task_n] = (eng_name, date, task_n, plan)
@@ -740,12 +763,13 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                 self.log('Выбрать задание и нажать \"Начать\"')
                 # self.log('Ожидание стартового сигнала для %s' % self.xml_parser.get_rus_name(eng_name) + ":" + date)
             elif msg_type == 8:
+                print(" Tasks not created yet")
                 self.log_error('Задачи еще не созданы')
             elif msg_type == 10:
-                print(' msg_type == 10')
-                print(' self.name_combobox.currentIndex() = ', self.name_combobox.currentIndex())
-                print(' self.name_combobox.currentText()  = ', self.name_combobox.currentText())
-                self.log_success('Файл доставлен. Задание завершено.')
+                # print(' File send OK')
+                # print(' current index = ', self.name_combobox.currentIndex())
+                # print(' current text = ', self.name_combobox.currentText())
+                self.log_success(' Файл доставлен. Задание завершено.')
 
                 self.name_combobox.setDisabled(False)
                 self.start_button.setDisabled(False)
@@ -780,6 +804,9 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                 #       |
                 # So I need to -1 every that is after him:
                 # should find them(4,5), remove from the map, remove this finished(3), mimus them 4-1, 5-1 and added to the map
+
+                # what we gonna do next?...
+                # Index switch to the same product
                 last_index = self.name_combobox.count() - 1 # 5
                 curr_index = self.name_combobox.currentIndex() # 3
                 curr_text = self.name_combobox.itemText(curr_index)
@@ -797,8 +824,9 @@ class SlaveGui(QMainWindow, design.Ui_MainWindow):
                         print(' i...........', i)
                         self.name_combobox.setCurrentIndex(i)
 
-                if config.auto_start_same_product and self.name_combobox.count() != 0:
-                    self.start_work()
+                # if config.auto_start_same_product and self.name_combobox.count() != 0:
+                #     self.start_work()
+        #         Let it send file or fail. New file will be created with new scan income
 
         except queue.Empty:
             pass
